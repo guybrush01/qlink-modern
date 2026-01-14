@@ -25,106 +25,61 @@ package org.jbrain.qlink.connection;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-import org.jbrain.qlink.QConfig;
 import org.jbrain.qlink.QLinkServer;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.*;
 import org.jbrain.qlink.cmd.action.*;
 
-// this class handles all comm to from client.
-public class QConnection extends Thread {
+/**
+ * Handles all communication to/from a Q-Link client.
+ * Manages frame serialization, sequence numbers, flow control, and keep-alive.
+ */
+public class QConnection extends Thread implements ConnectionTimerManager.ConnectionTimerCallback {
   private static final int MAX_CONSECUTIVE_ERRORS = 20;
-  private static Configuration _config = QConfig.getInstance();
-  private static Boolean _enableKeepalive = _config.getBoolean("qlink.keepalive.enabled");
-  private static Logger _log = Logger.getLogger(QConnection.class);
-  private static Timer _timer = new Timer();
-  private static TimerTask _pingTimer = null;;
-  public static byte FRAME_END = 0x0d;
+  private static final Logger _log = Logger.getLogger(QConnection.class);
+  public static final byte FRAME_END = 0x0d;
 
-  private Vector _listeners = new Vector();
-  private ArrayList _alSendQueue = new ArrayList();
+  // Sequence number constants
+  public static final byte SEQ_DEFAULT = 0x7f;
+  public static final byte SEQ_LOW = 0x10;
+  private static final int QSIZE = 16;
+
+  // Connection state
+  private volatile boolean _bRunning = false;
+  private boolean _bSuspend = false;
   private int _iConsecutiveErrors = 0;
-  private int _iQLen;
   private byte _inSequence;
   private byte _outSequence;
-  private boolean _bRunning = false;
+  private byte _defaultInSequence = SEQ_DEFAULT;
+  private byte _defaultOutSequence = SEQ_DEFAULT;
+  private int _iVersion;
+  private int _iRelease;
+
+  // I/O and networking
   private InputStream _is;
   private OutputStream _os;
   private HabitatConnection _hconn;
   private String _username;
   private QSession _session;
   private QLinkServer _qls;
-  private static final int QSIZE = 16;
-  private KeepAliveTask _keepAliveTask;
-  private SuspendWatchdog _suspendWatchdog;
 
-  private byte _defaultInSequence = SEQ_DEFAULT;
-  private byte _defaultOutSequence = SEQ_DEFAULT;
+  // Send queue for flow control
+  private final ArrayList _alSendQueue = new ArrayList();
+  private int _iQLen;
 
-  private int _iVersion;
-  private int _iRelease;
-  public static final byte SEQ_DEFAULT = 0x7f;
-  public static final byte SEQ_LOW = 0x10;
+  // Event listeners
+  private final Vector _listeners = new Vector();
 
-  private class PingTask extends TimerTask {
-    public void run() {
-      try {
-        write(new Ping());
-      } catch (IOException e) {
-        if (_bRunning) {
-          // link error.
-          _log.error("Link error", e);
-        }
-        close();
-      }
-    }
-  };
-
-  private class KeepAliveTask extends TimerTask {
-    private boolean _outStandingPing = false;
-
-    public void run() {
-      if (_outStandingPing) {
-        _log.debug("KeepAlive ping went unanswered, closing link");
-        close();
-      } else {
-        try {
-          write(new Ping());
-          _outStandingPing = true;
-        } catch (IOException e) {
-          if (_bRunning) {
-            // link error.
-            _log.error("Link error", e);
-          }
-          close();
-        }
-      }
-    }
-
-    public void reset() {
-      _outStandingPing = false;
-    }
-  };
-
-  private class SuspendWatchdog extends TimerTask {
-    public void run() {
-      // we never came back from suspend, close link.
-      close();
-    }
-  };
+  // Timer management
+  private final ConnectionTimerManager _timerManager;
 
   public QConnection(InputStream is, OutputStream os, QLinkServer qServer) {
     this(is, os, qServer, null, SEQ_DEFAULT, SEQ_DEFAULT);
   }
 
-  // TODO: hconn is kind of hacky. We should really have a more generic proxy mechanism than this.
-  // //
   public QConnection(
       InputStream is,
       OutputStream os,
@@ -134,6 +89,7 @@ public class QConnection extends Thread {
       byte defaultOutSequence) {
     _defaultInSequence = defaultInSequence;
     _defaultOutSequence = defaultOutSequence;
+    _timerManager = new ConnectionTimerManager(this);
 
     init();
     _is = is;
@@ -141,11 +97,31 @@ public class QConnection extends Thread {
     _qls = qServer;
     _username = username;
     _log.debug("Setting QConnection username: " + username);
-    if (System.getenv("QLINK_SHOULD_PING") != null) {
-      _enableKeepalive = Boolean.parseBoolean(System.getenv("QLINK_SHOULD_PING"));
-    }
     this.setDaemon(true);
     resumeLink();
+  }
+
+  // ConnectionTimerManager.ConnectionTimerCallback implementation
+  @Override
+  public void onPing() {
+    try {
+      write(new Ping());
+    } catch (IOException e) {
+      if (_bRunning) {
+        _log.error("Link error", e);
+      }
+      close();
+    }
+  }
+
+  @Override
+  public void onKeepaliveTimeout() {
+    close();
+  }
+
+  @Override
+  public void onSuspendTimeout() {
+    close();
   }
 
   public void setSession(QSession s) {
@@ -155,112 +131,147 @@ public class QConnection extends Thread {
   // listen for data to arrive, create Event, and dispatch.
   public void run() {
     CommandFactory factory = new CommandFactory();
-    Command cmd;
     byte[] data = new byte[256];
     int start = 0;
     int len = 0;
     int i;
-    byte inSeq = _inSequence;
     _log.info("Starting link thread");
     _bRunning = true;
 
     try {
       while (_bRunning && (i = _is.read(data, len, 256 - len)) > 0) {
-        // should optimize this to not scan all over again each time.
         len += i;
         for (i = 0; i < len; i++) {
           if (data[i] == FRAME_END) {
-            // we have a valid packet, process.
-
-            try {
-              if (_log.isDebugEnabled()) trace("Received packet: ", data, start, i - start);
-              cmd = factory.newInstance(data, start, i - start);
-              if (cmd != null) {
-                if (_keepAliveTask != null) _keepAliveTask.reset();
-                _log.debug("Received " + cmd.getName());
-                if (cmd instanceof Reset) {
-                  if (((Reset) cmd).isSuperQ()) {
-                    _log.debug("SuperQ/Music Connection special RESET received");
-                  }
-                  _log.debug("Issuing RESET Ack command");
-                  init();
-                  this.write(new ResetAck());
-                  _iVersion = ((Reset) cmd).getVersion();
-                  _iRelease = ((Reset) cmd).getRelease();
-                } else {
-                  // get the sequence number of the received packet.
-                  inSeq = cmd.getRecvSequence();
-                  if (cmd instanceof Action && incSeq(_inSequence) != inSeq) {
-                    _log.info("Sequence out of order, sending sequence error");
-                    if (++_iConsecutiveErrors == MAX_CONSECUTIVE_ERRORS) _bRunning = false;
-                    else write(new SequenceError());
-                  } else {
-                    _iConsecutiveErrors = 0;
-                    _inSequence = inSeq;
-                    freePackets(cmd.getSendSequence(), SequenceError.CMD == cmd.getCommand());
-                    switch (cmd.getCommand()) {
-                      case WindowFull.CMD_WINDOWFULL:
-                        write(new Ack());
-                        break;
-                      case Ping.CMD_PING:
-                        // not sure what you are supposed to do.
-                        write(new ResetAck());
-                        break;
-                      case AbstractAction.CMD_ACTION:
-                        if (cmd instanceof HabitatAction) {
-                          byte[] packetData = new byte[i - start];
-                          System.arraycopy(data, start, packetData, 0, i - start);
-                          if (_username != null) {
-                            getHabitatConnection().send(packetData, _username);
-                          } else {
-                            getHabitatConnection()
-                                .send(
-                                    packetData,
-                                    _session.getHandle() == null
-                                        ? "UNKNOWN"
-                                        : _session.getHandle().toString());
-                          }
-                        } else if (cmd instanceof Action)
-                          processActionEvent(new ActionEvent(this, (Action) cmd));
-                        else _log.error("Tried to process action " + cmd.getName());
-                        break;
-                      case ResetAck.CMD_RESETACK:
-                        break;
-                      case SequenceError.CMD:
-                        break;
-                    }
-                  }
-                }
-              } else {
-                _log.warn("Unknown packet received");
-              }
-            } catch (CRCException e) {
-              _log.info("CRC check failed, sending sequence error", e);
-              if (++_iConsecutiveErrors == MAX_CONSECUTIVE_ERRORS) _bRunning = false;
-              else write(new SequenceError());
-              // cheesy, we should now dump all packets in the window, but no
-              // idea how to do that.
-            }
-            // skip over framing end.
+            processFrame(factory, data, start, i - start);
             start = Math.min(i + 1, len);
           }
         }
         if (start != 0) {
-          // move additional data to front of buffer.
-          len = len - start;
-          if (len > 0) System.arraycopy(data, start, data, 0, len);
+          len = compactBuffer(data, start, len);
           start = 0;
         }
       }
     } catch (IOException e) {
       if (_bRunning) {
-        // link error.
         _log.error("Link error", e);
       }
     } catch (Exception e) {
       _log.error("Unchecked Exception error", e);
     } finally {
       close();
+    }
+  }
+
+  private int compactBuffer(byte[] data, int start, int len) {
+    int remaining = len - start;
+    if (remaining > 0) {
+      System.arraycopy(data, start, data, 0, remaining);
+    }
+    return remaining;
+  }
+
+  private void processFrame(CommandFactory factory, byte[] data, int start, int length) throws IOException {
+    try {
+      if (_log.isDebugEnabled()) {
+        trace("Received packet: ", data, start, length);
+      }
+      Command cmd = factory.newInstance(data, start, length);
+      if (cmd == null) {
+        _log.warn("Unknown packet received");
+        return;
+      }
+
+      _timerManager.resetKeepalive();
+      _log.debug("Received " + cmd.getName());
+
+      if (cmd instanceof Reset) {
+        handleReset((Reset) cmd);
+      } else {
+        handleCommand(cmd, data, start, length);
+      }
+    } catch (CRCException e) {
+      handleCRCError(e);
+    }
+  }
+
+  private void handleReset(Reset cmd) throws IOException {
+    if (cmd.isSuperQ()) {
+      _log.debug("SuperQ/Music Connection special RESET received");
+    }
+    _log.debug("Issuing RESET Ack command");
+    init();
+    write(new ResetAck());
+    _iVersion = cmd.getVersion();
+    _iRelease = cmd.getRelease();
+  }
+
+  private void handleCommand(Command cmd, byte[] data, int start, int length) throws IOException {
+    byte inSeq = cmd.getRecvSequence();
+
+    if (cmd instanceof Action && incSeq(_inSequence) != inSeq) {
+      handleSequenceError();
+      return;
+    }
+
+    _iConsecutiveErrors = 0;
+    _inSequence = inSeq;
+    freePackets(cmd.getSendSequence(), SequenceError.CMD == cmd.getCommand());
+
+    dispatchCommand(cmd, data, start, length);
+  }
+
+  private void dispatchCommand(Command cmd, byte[] data, int start, int length) throws IOException {
+    switch (cmd.getCommand()) {
+      case WindowFull.CMD_WINDOWFULL:
+        write(new Ack());
+        break;
+      case Ping.CMD_PING:
+        write(new ResetAck());
+        break;
+      case AbstractAction.CMD_ACTION:
+        handleAction(cmd, data, start, length);
+        break;
+      case ResetAck.CMD_RESETACK:
+      case SequenceError.CMD:
+        // No action needed
+        break;
+    }
+  }
+
+  private void handleAction(Command cmd, byte[] data, int start, int length) {
+    if (cmd instanceof HabitatAction) {
+      forwardToHabitat(data, start, length);
+    } else if (cmd instanceof Action) {
+      processActionEvent(new ActionEvent(this, (Action) cmd));
+    } else {
+      _log.error("Tried to process action " + cmd.getName());
+    }
+  }
+
+  private void forwardToHabitat(byte[] data, int start, int length) {
+    byte[] packetData = new byte[length];
+    System.arraycopy(data, start, packetData, 0, length);
+    String user = _username != null ? _username :
+        (_session.getHandle() == null ? "UNKNOWN" : _session.getHandle().toString());
+    getHabitatConnection().send(packetData, user);
+  }
+
+  private void handleSequenceError() throws IOException {
+    _log.info("Sequence out of order, sending sequence error");
+    if (++_iConsecutiveErrors == MAX_CONSECUTIVE_ERRORS) {
+      _bRunning = false;
+    } else {
+      write(new SequenceError());
+    }
+  }
+
+  private void handleCRCError(CRCException e) throws IOException {
+    _log.info("CRC check failed, sending sequence error", e);
+    if (++_iConsecutiveErrors == MAX_CONSECUTIVE_ERRORS) {
+      _bRunning = false;
+    } else {
+      write(new SequenceError());
     }
   }
 
@@ -309,35 +320,39 @@ public class QConnection extends Thread {
     }
   }
 
-  /*
-   * This can be called from the server
-   * From the timertask
-   * from the keep alive task
-   * from the thread run.
+  /**
+   * Closes the connection and cleans up all resources.
+   * Safe to call multiple times - only executes once.
    */
   public synchronized void close() {
-    // we only want to call close once
-    if (_bRunning) {
-      _bRunning = false;
-      stopTimer();
-      if (_keepAliveTask != null) _keepAliveTask.cancel();
-      _log.debug("Sending Disconnect Action to server");
-      try {
-       processActionEvent(new ActionEvent(this, new LostConnection()));
-      } catch (Exception e) {
-        _log.error("Unchecked Exception", e);
-      }
-      _log.debug("Terminating link");
-      if (_os != null) {
-        try {
-          _os.close();
-          _is.close();
-        } catch (IOException e) {
-        }
-      }
-      if (_hconn != null) {
-        _hconn.close();
-      }
+    if (!_bRunning) {
+      return;
+    }
+
+    _bRunning = false;
+    _timerManager.shutdown();
+
+    _log.debug("Sending Disconnect Action to server");
+    try {
+      processActionEvent(new ActionEvent(this, new LostConnection()));
+    } catch (Exception e) {
+      _log.error("Unchecked Exception", e);
+    }
+
+    _log.debug("Terminating link");
+    closeStreams();
+
+    if (_hconn != null) {
+      _hconn.close();
+    }
+  }
+
+  private void closeStreams() {
+    try {
+      if (_os != null) _os.close();
+      if (_is != null) _is.close();
+    } catch (IOException e) {
+      // Ignore close errors
     }
   }
 
@@ -413,22 +428,12 @@ public class QConnection extends Thread {
     return sequence;
   }
 
-  /** */
   private void addTimer() {
-    if (_pingTimer == null) {
-      _log.debug("Starting PING timer");
-      _pingTimer = new PingTask();
-      _timer.scheduleAtFixedRate(_pingTimer, 2000, 2000);
-    }
+    _timerManager.startPingTimer();
   }
 
-  /** */
   private synchronized void stopTimer() {
-    if (_pingTimer != null) {
-      _log.debug("Stopping PING timer");
-      _pingTimer.cancel();
-      _pingTimer = null;
-    }
+    _timerManager.stopPingTimer();
   }
 
   /**
@@ -436,9 +441,7 @@ public class QConnection extends Thread {
    * @param i
    * @param length
    */
-  private static String _hex = "0123456789ABCDEF";
-
-  private boolean _bSuspend;
+  private static final String HEX_CHARS = "0123456789ABCDEF";
 
   public static void trace(String prefix, byte[] data, int i, int length) {
     StringBuffer sb = new StringBuffer(length * 3 + prefix.length());
@@ -447,8 +450,8 @@ public class QConnection extends Thread {
     while (length > 0) {
       d = data[i++];
       length--;
-      sb.append(_hex.charAt((d >> 4) & 0x0f));
-      sb.append(_hex.charAt(d & 0x0f));
+      sb.append(HEX_CHARS.charAt((d >> 4) & 0x0f));
+      sb.append(HEX_CHARS.charAt(d & 0x0f));
       sb.append(" ");
     }
     _log.debug(sb.toString());
@@ -472,40 +475,28 @@ public class QConnection extends Thread {
     }
   }
 
-  /** */
+  /**
+   * Suspends the link, stopping keepalive but starting a watchdog timer.
+   */
   public synchronized void suspendLink() {
-    // remove ping timer.
     stopTimer();
-    if (_keepAliveTask != null) _keepAliveTask.cancel();
-    else if (_enableKeepalive) _log.error("Suspending, but KeepAliveTask is null!");
-    _keepAliveTask = null;
+    _timerManager.stopKeepaliveTimer();
     _bSuspend = true;
-
-    // but, we need to add a longer timer, or otherwise, the link could hang here.
-
-    _suspendWatchdog = new SuspendWatchdog();
-    _log.debug("Scheduling suspend watchdog for 5 minutes");
-    _timer.schedule(_suspendWatchdog, 5 * 90000);
+    _timerManager.startSuspendWatchdog();
   }
 
-  /** */
+  /**
+   * Resumes the link after suspension.
+   */
   public synchronized void resumeLink() {
-    // killing watchdog.
-    if (_suspendWatchdog != null) _suspendWatchdog.cancel();
-    _suspendWatchdog = null;
-    if (_keepAliveTask == null && _enableKeepalive) {
-      _log.debug("Creating keep alive timer");
-      _keepAliveTask = new KeepAliveTask();
-      _log.debug("Scheduling keep alive timer for 60 second intervals");
-      _timer.scheduleAtFixedRate(_keepAliveTask, 90000, 90000);
-    } else if (_enableKeepalive) _log.warn("Resuming, but KeepAliveTask alreayd active");
+    _timerManager.stopSuspendWatchdog();
+    _timerManager.startKeepaliveTimer();
     _bSuspend = false;
+
     try {
-      // need to drain queue.
       drainQueue();
     } catch (IOException e) {
       if (_bRunning) {
-        // link error.
         _log.error("Link error", e);
       }
       close();
