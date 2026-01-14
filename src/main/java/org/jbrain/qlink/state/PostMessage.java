@@ -24,14 +24,15 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.sql.*;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.MessageDAO;
+import org.jbrain.qlink.db.dao.TocDAO;
 
 public class PostMessage extends AbstractState {
   private static Logger _log = Logger.getLogger(PostMessage.class);
@@ -70,22 +71,14 @@ public class PostMessage extends AbstractState {
   }
 
   public void savePosting(String text) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     int id;
     String title = text.substring(6, 39).trim();
-    String sql;
 
     // we need to find an open ID, and grab it.
 
     try {
-      conn = DBUtils.getConnection();
-
       _log.debug("Trying to find an open MessageEntry");
-      id =
-          DBUtils.getNextID(
+      id = TocDAO.getInstance().getNextReferenceId(
               _iNextID != 0 ? _iNextID : _iParentID != 0 ? _iParentID : _iBaseID,
               MenuItem.MESSAGE,
               0x7fffff);
@@ -93,56 +86,32 @@ public class PostMessage extends AbstractState {
         // error
         _log.error("Cannot find ID to use for message");
       } else {
-		  _IDf = id;
-    _log.debug("_IDf "+_IDf);
+        _IDf = id;
+        _log.debug("_IDf "+_IDf);
         // need to clean up headings and put in serial number.
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
         text = text.substring(0, 57) + sdf.format(new Date()) + " S# " + id + text.substring(80);
-        sql = "insert into messages (reference_id,parent_id,base_id,title,author,date,replies,text) VALUES (?,?,?,?,?,now(),0,?)";
-        stmt = conn.prepareStatement(sql);
-        stmt.setInt(1, id);
-        stmt.setInt(2, _iParentID);
-        stmt.setInt(3, _iBaseID);
-        stmt.setString(4, fix(title));
-        stmt.setString(5, _session.getHandle().toString());
-        stmt.setString(6, fix(text));
 
-        //@TODO:  This isn't a standard thing.  Maybe do it with Log4JDBC or something.
-        _log.debug(stmt.toString());
-        stmt.execute(sql);
-        if (stmt.getUpdateCount() == 0) {
+        int result = MessageDAO.getInstance().create(id, _iParentID, _iBaseID, title, _session.getHandle().toString(), text);
+        if (result <= 0) {
           _log.error("Could not insert record into messages");
         } else {
-          if (_iParentID == 0) _session.send(new PostingSuccess(_iBaseID));
-          else {
-            sql = "update messages set replies=replies+1 where reference_id=?";
-            stmt = conn.prepareStatement(sql);
-            stmt.setInt(1, _iParentID);
-            _log.debug(stmt.toString());
-            stmt.execute();
-            if (_iNextID == 0)
+          if (_iParentID == 0) {
+            _session.send(new PostingSuccess(_iBaseID));
+          } else {
+            MessageDAO.getInstance().incrementRepliesByReferenceId(_iParentID);
+            if (_iNextID == 0) {
               // another response might have snuck in before us, but not a big deal.
               _session.send(new PostingSuccess(id));
-            else _session.send(new PostingSuccess(_iNextID));
+            } else {
+              _session.send(new PostingSuccess(_iNextID));
+            }
           }
         }
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
- 
     }
-  }
-
-  /**
-   * @param str
-   * @return
-   */
-  private String fix(String str) {
-    return str.replaceAll("'", "''");
   }
 
   public boolean execute(Action a) throws IOException {

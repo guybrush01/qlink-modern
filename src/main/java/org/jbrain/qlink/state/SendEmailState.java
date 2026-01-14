@@ -24,14 +24,13 @@
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.sql.*;
+import java.sql.SQLException;
 import java.text.*;
-import java.util.*;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.EmailDAO;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
@@ -116,36 +115,16 @@ public class SendEmailState extends AbstractState {
 
 	
 	private void saveEmail(int id, String text) {
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    ResultSet rs = null;
-    String sql;
-
     try {
-      conn = DBUtils.getConnection();
       _log.debug("Saving email to " + _recipient);
-      sql = "INSERT INTO email (recipient_id, recipient, sender_id, sender,"
-          + "subject, body, unread, received_date) "
-          + "VALUES (?, NULL, ?, NULL, NULL, ?, 'Y' ,now())";
-      pstmt = conn.prepareStatement(sql);
-      pstmt.setInt(1, id);
-      pstmt.setInt(2, _session.getAccountID());
-      pstmt.setString(3, text);
-      _log.debug(pstmt.toString());  // show generated SQL
-      pstmt.execute();
-      if (pstmt.getUpdateCount() > 0) {
-        // we added it.
+      int result = EmailDAO.getInstance().createSimple(id, _session.getAccountID(), text);
+      if (result > 0) {
         _log.debug("Email successfully saved");
       } else {
         _log.debug("Email not saved");
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(pstmt);
-      DBUtils.close(conn);
     }
 	}
 }

@@ -24,17 +24,12 @@ SKERN
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.sql.*;
-import java.text.*;
-import java.util.*;
+import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
-import org.jbrain.qlink.user.AccountInfo;
-import org.jbrain.qlink.user.QHandle;
-import org.jbrain.qlink.user.UserManager;
+import org.jbrain.qlink.db.dao.FileDAO;
 import org.jbrain.qlink.connection.*;
 
 
@@ -159,49 +154,18 @@ public class SaveFileState extends AbstractState {
 
 
   private synchronized void saveFile(int id, StringBuffer Data) {
-    Connection conn = null;
-    PreparedStatement pstmt = null;
-    ResultSet rs = null;
-    String sql;
-   _log.debug("File content for SQL in Hex "+ asciiToHex(Data.toString()));
+    _log.debug("File content for SQL in Hex "+ asciiToHex(Data.toString()));
     try {
-      conn = DBUtils.getConnection();
       _log.debug("Saving File to sql");
-      
-      sql =
-          "INSERT INTO files (reference_id, name, filetype, downloads,"
-              + "data ) "
-              + "VALUES (?, ?, ?, ?, ?)";
-     
-		
-
-  InputStream is = new  StringBufferInputStream(Data.toString());
- 
-
-    
-
-      
-      pstmt = conn.prepareStatement(sql);
-      pstmt.setInt(1, id);
-      pstmt.setString(2, Filename);
-      pstmt.setString(3, Ftype);
-      pstmt.setInt(4, FileText);
-      pstmt.setBlob(5, is);
-      _log.debug(pstmt.toString()); // show generated SQL
-      pstmt.execute();
-      if (pstmt.getUpdateCount() > 0) {
-        // we added it.
+      InputStream is = new StringBufferInputStream(Data.toString());
+      int result = FileDAO.getInstance().createWithDownloads(id, Filename, Ftype, FileText, is);
+      if (result > 0) {
         _log.debug("File successfully saved");
       } else {
         _log.debug("File not saved");
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(pstmt);
-      DBUtils.close(conn);
     }
   }
 }

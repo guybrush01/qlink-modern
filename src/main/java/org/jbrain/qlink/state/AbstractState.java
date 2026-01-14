@@ -24,14 +24,13 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.IOException;
-import java.sql.*;
-import java.util.*;
+import java.sql.SQLException;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.EmailDAO;
 import org.jbrain.qlink.user.QHandle;
 
 public abstract class AbstractState implements QState {
@@ -112,26 +111,12 @@ public abstract class AbstractState implements QState {
 
   /** @return */
   protected boolean checkEmail() {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement(
-              "SELECT email_id FROM email WHERE unread='Y' AND recipient_id=? LIMIT 1");
-      stmt.setInt(1, _session.getAccountID());
       _log.debug("Checking for email to " + _session.getHandle());
-      rs =
-          stmt.executeQuery();
-      return rs.next();
+      return EmailDAO.getInstance().hasUnreadEmail(_session.getAccountID());
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       return false;
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 

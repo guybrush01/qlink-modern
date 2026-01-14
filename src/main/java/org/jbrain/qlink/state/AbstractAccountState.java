@@ -24,13 +24,14 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.AccountDAO;
+import org.jbrain.qlink.db.dao.UserDAO;
 import org.jbrain.qlink.dialog.*;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
@@ -46,138 +47,73 @@ public class AbstractAccountState extends AbstractPhaseState {
   }
 
   protected void updateCode(String code) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    int id;
-
     if (_log.isDebugEnabled())
       _log.debug("Updating account '" + _session.getAccountID() + "' access code to: " + code);
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("UPDATE users SET access_code=? WHERE user_id=?");
-      stmt.setString(1, code);
-      stmt.setInt(2, _session.getUserID());
-      if (stmt.execute()) {
-        _log.info("PHASE: Updating access code on disk");
-        // we did it.
-      }
+      UserDAO.getInstance().updateAccessCode(_session.getUserID(), code);
+      _log.info("PHASE: Updating access code on disk");
     } catch (SQLException e) {
       // big time error, send back error string and close connection
       _log.error("Could not update security code", e);
       _session.terminate();
-    } finally {
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
   public boolean addPrimaryAccount(QHandle handle, String sAccount) throws IOException {
     boolean rc = false;
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    int iUserID;
 
     try {
-      conn = DBUtils.getConnection();
       String code = getNewCode();
-      stmt =
-          conn.prepareStatement(
-              "INSERT INTO users "
-                  + "(access_code,active,create_date,last_access,last_update,orig_account,orig_code) "
-                  + "VALUES (?, 'Y', now(), now(), now(), ?, ?)",
-              Statement.RETURN_GENERATED_KEYS);
-      stmt.setString(1, code);
-      stmt.setString(2, sAccount);
-      stmt.setString(3, _sSecurityCode);
 
       _log.debug("Adding new user");
-      DBUtils.close(rs);
-      stmt.execute();
+      int iUserID = UserDAO.getInstance().createForRegistration(code, sAccount, _sSecurityCode);
 
-      if (stmt.getUpdateCount() > 0) {
-        // we added it.
-        // update security code
-        rs = stmt.getGeneratedKeys();
-        if (rs.next()) {
-          iUserID = rs.getInt(1);
-          _sSecurityCode = code;
-          DBUtils.close(rs);
-          int id = addScreenName(conn, stmt, iUserID, true, handle);
-          if (id > -1) {
-            rc = true;
-            _session.setAccountInfo(
-                new AccountInfo(iUserID, id, true, handle.toString(), false, false));
-          }
-        } else {
-          // could not get insert key....
-          _log.error("Could not obtain inserted record key");
+      if (iUserID > 0) {
+        _sSecurityCode = code;
+        int id = addScreenName(iUserID, true, handle);
+        if (id > -1) {
+          rc = true;
+          _session.setAccountInfo(
+              new AccountInfo(iUserID, id, true, handle.toString(), false, false));
         }
       } else {
-        // db error, could not insert first part.
         _log.error("Could not insert record into users table");
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return rc;
   }
 
   protected int addScreenName(int iUserID, QHandle handle) {
-    int id = -1;
-    Connection conn = null;
-    PreparedStatement stmt = null;
-
-    try {
-      conn = DBUtils.getConnection();
-
-      id = addScreenName(conn, stmt, iUserID, false, handle);
-    } catch (SQLException e) {
-      _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
-    }
-    return id;
+    return addScreenName(iUserID, false, handle);
   }
+
   /**
-   *
-   * @param conn
-   * @param stmt
-   * @param handle
-   * @return
+   * Adds a screen name for a user.
    */
-  private int addScreenName(Connection conn, PreparedStatement stmt, int iUserID, boolean bPrimary, QHandle handle) {
-    ResultSet rs = null;
+  private int addScreenName(int iUserID, boolean bPrimary, QHandle handle) {
     int id = -1;
-    String sPrimary = (bPrimary ? "Y" : "N");
 
     // synchronized on something, because we can't allow two people to add at exactly same time.
     synchronized (_log) {
       try {
         if (UserManager.getAccount(handle) == null) {
-          stmt = conn.prepareStatement("INSERT INTO accounts (user_id,primary_ind,active,handle,create_date," +
-                  "last_access,last_update,refresh) VALUES (?,?,'Y',?,now(),now(),now(),'N')",
-                  Statement.RETURN_GENERATED_KEYS);
-          stmt.setInt(1, iUserID);
-          stmt.setString(2,sPrimary);
-          stmt.setString(3, handle.toString());
-          stmt.execute();
-          if (stmt.getUpdateCount() > 0) {
-            // get account number.
-            rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-              id = rs.getInt(1);
-              _log.debug("New screen name '" + handle + "' added");
-            } else {
-              _log.error("Could not obtain inserted record key");
-            }
+          if (bPrimary) {
+            id = AccountDAO.getInstance().createPrimaryAccount(iUserID, handle.toString());
+          } else {
+            // Create sub-account
+            org.jbrain.qlink.db.entity.Account account = new org.jbrain.qlink.db.entity.Account();
+            account.setUserId(iUserID);
+            account.setHandle(handle.toString());
+            account.setPrimaryInd(false);
+            account.setStaffInd(false);
+            account.setActive(true);
+            account.setRefresh(false);
+            id = AccountDAO.getInstance().create(account);
+          }
+          if (id > 0) {
+            _log.debug("New screen name '" + handle + "' added");
           } else {
             _log.info("Handle '" + handle + "' could not be inserted");
           }
@@ -255,39 +191,8 @@ public class AbstractAccountState extends AbstractPhaseState {
   }
 
   private boolean containsReservedWords(String handle) throws SQLException {
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
-
-    // lowercase and remove spaces.
-    handle = handle.toLowerCase().replaceAll(" ", "");
-    try {
-      _log.debug("Checking for reserved words");
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
-      rs = stmt.executeQuery("SELECT name from reserved_names");
-      if (rs.next()) {
-        // check the found names
-        do {
-          if (handle.startsWith(rs.getString("name").toLowerCase())) return true;
-        } while (rs.next());
-      }
-    } finally {
-      DBUtils.close(rs);
-      if (stmt != null) {
-        try {
-          stmt.close();
-        } catch (SQLException sqlEx) {
-        } // ignore }
-        stmt = null;
-      }
-      if (conn != null)
-        try {
-          conn.close();
-        } catch (SQLException e) {
-        }
-    }
-    return false;
+    _log.debug("Checking for reserved words");
+    return AccountDAO.getInstance().containsReservedWord(handle);
   }
 
   private boolean containsInvalidChars(String handle) {

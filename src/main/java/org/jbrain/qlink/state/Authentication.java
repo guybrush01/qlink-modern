@@ -24,13 +24,14 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.AccountDAO;
+import org.jbrain.qlink.db.dao.UserDAO;
 import org.jbrain.qlink.dialog.*;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
@@ -149,62 +150,59 @@ public class Authentication extends AbstractAccountState {
   }
 
   protected void validateUser() throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
     QHandle handle;
     long id = -1;
-    long iUserID = -1;
 
     try {
       try {
         id = Long.parseLong(_sAccount);
-        conn = DBUtils.getConnection();
-        stmt = conn.prepareStatement("SELECT accounts.staff_ind, users.name, users.user_id,accounts.primary_ind, " +
-                        "users.access_code,users.active,accounts.active,accounts.handle,accounts.refresh from " +
-                        "accounts,users WHERE accounts.user_id=users.user_id AND accounts.account_id=?");
-        stmt.setLong(1, id);
-        rs = stmt.executeQuery();
       } catch (NumberFormatException e) {
         _log.info("Account code '" + _sAccount + "' not a number, new user");
       }
-      if (id > -1 && rs != null && rs.next()) {
+
+      AccountDAO.LoginData loginData = null;
+      if (id > -1) {
+        loginData = AccountDAO.getInstance().findAccountWithUserForLogin(id);
+      }
+
+      if (loginData != null) {
         // possible valid account...
-        if (rs.getString("users.access_code").equals(_sSecurityCode)) {
+        if (loginData.accessCode.equals(_sSecurityCode)) {
           // valid account
           // is account valid?
-          if (rs.getString("accounts.active").equals("Y")
-              && rs.getString("users.active").equals("Y")) {
-            handle = new QHandle(rs.getString("accounts.handle"));
+          if (loginData.accountActive && loginData.userActive) {
+            handle = new QHandle(loginData.handle);
             if (!_session.getServer().isUserOnline(handle)) {
               // active account
-              iUserID = rs.getInt("users.user_id");
+              int iUserID = loginData.userId;
               // little add for getting preexisting users information.
-              String name = rs.getString("users.name");
+              String name = loginData.userName;
               _bInfoNeeded = name == null || name.equals("");
               _session.setAccountInfo(
                   new AccountInfo(
-                      (int) iUserID,
+                      iUserID,
                       (int) id,
-                      rs.getString("accounts.primary_ind").equals("Y"),
+                      loginData.primaryInd,
                       handle.toString(),
                       false,
-                      rs.getString("accounts.staff_ind").equalsIgnoreCase("y")));
+                      loginData.staffInd));
 
-              // temp to clean up acounts:
-              if (_session.isPrimaryAccount()
-                  && rs.getString("accounts.refresh").equalsIgnoreCase("Y")) {
+              // temp to clean up accounts:
+              if (_session.isPrimaryAccount() && loginData.refresh) {
                 _log.debug("Fixing account: '" + id + "'");
                 _session.send(new AddPrimaryAccount(_sAccount, handle.toString()));
                 _session.send(new ClearExtraAccounts());
-                stmt.execute("update accounts SET refresh='N' where account_id=" + id);
-                stmt.execute(
-                    "update accounts SET refresh='Y' where primary_ind='N' and user_id=" + iUserID);
+                AccountDAO.getInstance().clearRefresh((int) id);
+                AccountDAO.getInstance().setRefreshForSubAccounts(iUserID);
               }
               // update access time information in DB
               // if these fail, we're not too worried
-              stmt.execute("UPDATE users set last_access=now() WHERE user_id=" + iUserID);
-              stmt.execute("UPDATE accounts set last_access=now() WHERE account_id=" + id);
+              try {
+                UserDAO.getInstance().updateLastAccess(iUserID);
+                AccountDAO.getInstance().updateLastAccess((int) id);
+              } catch (SQLException e) {
+                _log.warn("Failed to update last access time", e);
+              }
 
               // get new code
               // TODO enable this at appropriate time.
@@ -242,10 +240,6 @@ public class Authentication extends AbstractAccountState {
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       // big time error, send back error string and close connection
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 }

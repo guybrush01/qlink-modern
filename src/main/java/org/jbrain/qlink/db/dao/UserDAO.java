@@ -164,4 +164,18 @@ public class UserDAO extends BaseDAO {
     public int delete(int userId) throws SQLException {
         return executeUpdate("DELETE FROM users WHERE user_id = ?", userId);
     }
+
+    /**
+     * Creates a new user during registration.
+     * @return the generated user ID
+     */
+    public int createForRegistration(String accessCode, String origAccount, String origCode) throws SQLException {
+        return executeInsertWithGeneratedKey(
+            "INSERT INTO users (access_code, active, create_date, last_access, last_update, orig_account, orig_code) " +
+            "VALUES (?, 'Y', NOW(), NOW(), NOW(), ?, ?)",
+            accessCode,
+            origAccount,
+            origCode
+        );
+    }
 }

@@ -23,116 +23,70 @@ Created on Sep 29, 2005
 */
 package org.jbrain.qlink.user;
 
-import java.sql.*;
-import java.util.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.AccountDAO;
+import org.jbrain.qlink.db.dao.UserDAO;
+import org.jbrain.qlink.db.entity.Account;
 
 public class UserManager {
   private static Logger _log = Logger.getLogger(UserManager.class);
 
   public static List getAccountsforUser(int id) {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
     List l = new ArrayList();
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement(
-              "SELECT staff_ind,primary_ind, user_id,account_id,handle,refresh from accounts where user_id=? " +
-                      "order by create_date");
-      stmt.setInt(1, id);
       _log.debug("Checking for accounts for User ID: " + id);
-      rs =
-          stmt.executeQuery();
-      createObjects(l, rs);
+      List<Account> accounts = AccountDAO.getInstance().findByUserId(id);
+      for (Account account : accounts) {
+        l.add(convertToAccountInfo(account));
+      }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return l;
   }
 
   public static AccountInfo getAccount(QHandle handle) {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    AccountInfo info = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement(
-              "SELECT staff_ind,primary_ind, user_id,account_id,handle,refresh from accounts where REPLACE(handle,' ','') LIKE ?");
-      stmt.setString(1, handle.getKey() );
       _log.debug("Getting Account information for '" + handle + "'");
-      rs =
-          stmt.executeQuery();
-      if (rs.next()) info = populateAccountInfo(rs);
+      Account account = AccountDAO.getInstance().findByHandle(handle.getKey());
+      if (account != null) {
+        return convertToAccountInfo(account);
+      }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
-    return info;
+    return null;
   }
 
   public static List getSubAccountsforUser(int id) {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
     List l = new ArrayList();
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement(
-              "SELECT staff_ind,primary_ind, user_id,account_id,handle,refresh from accounts where primary_ind='N' " +
-                      "and user_id=? order by create_date");
-      stmt.setInt(1, id);
       _log.debug("Checking for sub accounts for User ID: " + id);
-      rs =
-          stmt.executeQuery();
-      createObjects(l, rs);
+      List<Account> accounts = AccountDAO.getInstance().findSubAccountsByUserId(id);
+      for (Account account : accounts) {
+        l.add(convertToAccountInfo(account));
+      }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return l;
   }
 
   /**
-   * @param rs
-   * @return
+   * Converts an Account entity to AccountInfo.
    */
-  private static List createObjects(List l, ResultSet rs) throws SQLException {
-    while (rs.next()) {
-      l.add(populateAccountInfo(rs));
-    }
-    return l;
-  }
-
-  /**
-   * @param rs
-   * @return
-   * @throws SQLException
-   */
-  private static AccountInfo populateAccountInfo(ResultSet rs) throws SQLException {
+  private static AccountInfo convertToAccountInfo(Account account) {
     return new AccountInfo(
-        rs.getInt("user_id"),
-        rs.getInt("account_id"),
-        rs.getString("primary_ind").equalsIgnoreCase("Y"),
-        rs.getString("handle"),
-        (rs.getString("refresh").equalsIgnoreCase("Y")),
-        (rs.getString("staff_ind").equalsIgnoreCase("Y")));
+        account.getUserId(),
+        account.getAccountId(),
+        account.isPrimaryInd(),
+        account.getHandle(),
+        account.isRefresh(),
+        account.isStaffInd());
   }
 
   /**
@@ -140,37 +94,14 @@ public class UserManager {
    * @throws Exception
    */
   public static void deleteUser(int userID) throws Exception {
-    // TODO make this throw a better exception.
     try {
-      Connection conn = DBUtils.getConnection();
-      PreparedStatement stmt = conn.prepareStatement("DELETE from users where user_id=" + userID);
-      stmt.setInt(1, userID);
-      stmt.executeUpdate();
-      if (stmt.getUpdateCount() == 0) {
+      int updated = UserDAO.getInstance().delete(userID);
+      if (updated == 0) {
         throw new Exception("Update Count==0");
       }
-    } catch (Exception e) {
-      throw e;
-    }
-  }
-
-  private static int executeSQL(String sql) throws SQLException {
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
-
-    try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
-      stmt.execute(sql);
-      return stmt.getUpdateCount();
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       throw e;
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
@@ -182,30 +113,14 @@ public class UserManager {
    */
   public static void updateUserInfo(
       int userID, String name, String city, String state, String country) throws Exception {
-    Connection conn;
-    PreparedStatement pstmt = null;
-    String sql;
-
     try {
-      sql = "UPDATE users SET name = ?, city = ?, state = ?, country = ? WHERE user_id = ?";
-      pstmt = DBUtils.getConnection().prepareStatement(sql);
-      pstmt.setString(1, name);
-      pstmt.setString(2, city);
-      pstmt.setString(3, state);
-      pstmt.setString(4, country);
-      pstmt.setInt(5, userID);
-      if (pstmt.executeUpdate() == 0) {
-        _log.debug(pstmt.toString());
-        // FIXME handle gracefully
+      int updated = UserDAO.getInstance().updateUserInfo(userID, name, city, state, country);
+      if (updated == 0) {
         throw new Exception("Update Count==0");
       }
-    } catch (Exception e) {
+    } catch (SQLException e) {
+      _log.error("SQL Exception", e);
       throw e;
-    } finally {
-      try {
-        pstmt.close();
-      } catch (Exception x) {
-      }
     }
   }
 }

@@ -80,7 +80,7 @@ public class BulletinDAO extends BaseDAO {
      */
     public List<Bulletin> findApprovedActive() throws SQLException {
         return queryForList(
-            "SELECT * FROM bulletin WHERE approved = 'Y' AND start_date <= NOW() AND end_date >= NOW() ORDER BY bulletin_id",
+            "SELECT * FROM bulletin WHERE approved = 'Y' AND start_date <= NOW() AND end_date >= NOW() ORDER BY start_date DESC",
             BULLETIN_MAPPER
         );
     }

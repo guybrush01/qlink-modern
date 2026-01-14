@@ -22,6 +22,7 @@ package org.jbrain.qlink.db.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jbrain.qlink.db.BaseDAO;
@@ -217,5 +218,98 @@ public class AccountDAO extends BaseDAO {
             "SELECT 1 FROM reserved_names WHERE name = ?",
             handle.replace(" ", "").toLowerCase()
         );
+    }
+
+    /**
+     * Finds account with associated user data for login validation.
+     * Returns null if account not found.
+     */
+    public LoginData findAccountWithUserForLogin(long accountId) throws SQLException {
+        return queryForObject(
+            "SELECT a.staff_ind, a.primary_ind, a.active as account_active, a.handle, a.refresh, " +
+            "u.name, u.user_id, u.access_code, u.active as user_active " +
+            "FROM accounts a " +
+            "JOIN users u ON a.user_id = u.user_id " +
+            "WHERE a.account_id = ?",
+            new ResultSetMapper<LoginData>() {
+                public LoginData map(ResultSet rs) throws SQLException {
+                    LoginData data = new LoginData();
+                    data.staffInd = "Y".equalsIgnoreCase(rs.getString("staff_ind"));
+                    data.primaryInd = "Y".equalsIgnoreCase(rs.getString("primary_ind"));
+                    data.accountActive = "Y".equalsIgnoreCase(rs.getString("account_active"));
+                    data.handle = rs.getString("handle");
+                    data.refresh = "Y".equalsIgnoreCase(rs.getString("refresh"));
+                    data.userName = rs.getString("name");
+                    data.userId = rs.getInt("user_id");
+                    data.accessCode = rs.getString("access_code");
+                    data.userActive = "Y".equalsIgnoreCase(rs.getString("user_active"));
+                    return data;
+                }
+            },
+            accountId
+        );
+    }
+
+    /**
+     * Sets refresh to N for an account.
+     */
+    public int clearRefresh(int accountId) throws SQLException {
+        return executeUpdate(
+            "UPDATE accounts SET refresh = 'N' WHERE account_id = ?",
+            accountId
+        );
+    }
+
+    /**
+     * Sets refresh to Y for all non-primary accounts of a user.
+     */
+    public int setRefreshForSubAccounts(int userId) throws SQLException {
+        return executeUpdate(
+            "UPDATE accounts SET refresh = 'Y' WHERE primary_ind = 'N' AND user_id = ?",
+            userId
+        );
+    }
+
+    /**
+     * Gets all reserved name prefixes.
+     */
+    public List<String> getReservedNames() throws SQLException {
+        return queryForList(
+            "SELECT name FROM reserved_names",
+            new ResultSetMapper<String>() {
+                public String map(ResultSet rs) throws SQLException {
+                    return rs.getString("name");
+                }
+            }
+        );
+    }
+
+    /**
+     * Checks if a handle starts with any reserved name prefix.
+     */
+    public boolean containsReservedWord(String handle) throws SQLException {
+        String normalizedHandle = handle.toLowerCase().replace(" ", "");
+        List<String> reservedNames = getReservedNames();
+        for (String reservedName : reservedNames) {
+            if (normalizedHandle.startsWith(reservedName.toLowerCase())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Data holder for login validation query results.
+     */
+    public static class LoginData {
+        public boolean staffInd;
+        public boolean primaryInd;
+        public boolean accountActive;
+        public String handle;
+        public boolean refresh;
+        public String userName;
+        public int userId;
+        public String accessCode;
+        public boolean userActive;
     }
 }

@@ -24,13 +24,14 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.sql.*;
+import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.EmailDAO;
+import org.jbrain.qlink.db.entity.Email;
 import org.jbrain.qlink.text.TextFormatter;
 
 public class ReadEmailState extends AbstractState {
@@ -81,36 +82,20 @@ public class ReadEmailState extends AbstractState {
   }
 
   private String getNextEmail() {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT email_id, body " +
-              "FROM email WHERE unread='Y' AND recipient_id=? LIMIT 1");
       _log.debug("Getting next email for " + _session.getHandle());
-      stmt.setInt(1, _session.getAccountID());
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        String body = rs.getString("body");
-        int emailId = rs.getInt("email_id");
-        stmt = conn.prepareStatement("UPDATE email SET unread='N' WHERE email_id=?");
-        stmt.setInt(1, emailId);
-        stmt.execute();
-        if (stmt.getUpdateCount() > 0) {
+      Email email = EmailDAO.getInstance().getNextUnread(_session.getAccountID());
+      if (email != null) {
+        int updated = EmailDAO.getInstance().markAsRead(email.getEmailId());
+        if (updated > 0) {
           _log.debug("Updated email to read");
         } else {
           _log.error("Was not able to set email indicator to 'read'");
         }
-        return body;
+        return email.getBody();
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return null;
   }

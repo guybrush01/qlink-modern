@@ -24,16 +24,14 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.BulletinDAO;
+import org.jbrain.qlink.db.entity.Bulletin;
 import org.jbrain.qlink.text.TextFormatter;
 
 public class MainMenu extends AbstractState {
@@ -50,28 +48,22 @@ public class MainMenu extends AbstractState {
   }
 
   public void sendBulletin() throws IOException {
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
     StringBuffer sb = new StringBuffer();
     char delim = (char) 0xff;
 
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
       _log.debug("Reading today's bulletin");
-      rs =
-          stmt.executeQuery(
-              "SELECT text from bulletin WHERE start_date<now() AND end_date>now() AND approved='Y' ORDER BY start_date DESC");
-      if (rs.next()) {
+      List<Bulletin> bulletins = BulletinDAO.getInstance().findApprovedActive();
+
+      if (!bulletins.isEmpty()) {
         _log.debug("Defining Bulletin");
         TextFormatter tf = new TextFormatter();
         tf.add("WELCOME TO Q-LINK, " + _session.getHandle());
         tf.add("\n");
-        do {
-          tf.add(rs.getString("text"));
+        for (Bulletin bulletin : bulletins) {
+          tf.add(bulletin.getText());
           tf.add("\n");
-        } while (rs.next());
+        }
         tf.add("\n        <PRESS F5 FOR MENU>");
         _log.debug("Sending Bulletin");
         List l = tf.getList();
@@ -101,10 +93,6 @@ public class MainMenu extends AbstractState {
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 

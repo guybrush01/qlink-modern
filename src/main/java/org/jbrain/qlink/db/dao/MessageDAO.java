@@ -139,12 +139,22 @@ public class MessageDAO extends BaseDAO {
     }
 
     /**
-     * Increments the reply count for a message.
+     * Increments the reply count for a message by message_id.
      */
     public int incrementReplies(int messageId) throws SQLException {
         return executeUpdate(
             "UPDATE messages SET replies = replies + 1 WHERE message_id = ?",
             messageId
+        );
+    }
+
+    /**
+     * Increments the reply count for a message by reference_id.
+     */
+    public int incrementRepliesByReferenceId(int referenceId) throws SQLException {
+        return executeUpdate(
+            "UPDATE messages SET replies = replies + 1 WHERE reference_id = ?",
+            referenceId
         );
     }
 

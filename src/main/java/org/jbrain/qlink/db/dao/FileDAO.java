@@ -211,4 +211,46 @@ public class FileDAO extends BaseDAO {
     public int deleteByReferenceId(int referenceId) throws SQLException {
         return executeUpdate("DELETE FROM files WHERE reference_id = ?", referenceId);
     }
+
+    /**
+     * Creates a new file entry with downloads counter using an InputStream.
+     * @return the generated file ID
+     */
+    public int createWithDownloads(int referenceId, String name, String filetype, int downloads, InputStream dataStream) throws SQLException {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+        try {
+            conn = getConnection();
+            stmt = conn.prepareStatement(
+                "INSERT INTO files (reference_id, name, filetype, downloads, data) VALUES (?, ?, ?, ?, ?)",
+                PreparedStatement.RETURN_GENERATED_KEYS
+            );
+            stmt.setInt(1, referenceId);
+            stmt.setString(2, name);
+            stmt.setString(3, filetype);
+            stmt.setInt(4, downloads);
+            stmt.setBinaryStream(5, dataStream);
+            stmt.executeUpdate();
+            rs = stmt.getGeneratedKeys();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return -1;
+        } finally {
+            close(rs);
+            close(stmt);
+            close(conn);
+        }
+    }
+
+    /**
+     * Increments the download count for a file.
+     */
+    public int incrementDownloads(int referenceId) throws SQLException {
+        return executeUpdate(
+            "UPDATE files SET downloads = downloads + 1 WHERE reference_id = ?",
+            referenceId
+        );
+    }
 }

@@ -23,12 +23,12 @@ Created on Sep 29, 2005
 */
 package org.jbrain.qlink.user;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.AccountDAO;
+import org.jbrain.qlink.db.dao.UserDAO;
+import org.jbrain.qlink.db.entity.User;
 
 public class AccountInfo {
   private static Logger _log = Logger.getLogger(AccountInfo.class);
@@ -78,17 +78,12 @@ public class AccountInfo {
    * @throws AccountUpdateException
    */
   public void setRefresh(boolean b) throws AccountUpdateException {
-    String sRefresh = (b ? "Y" : "N");
-
     if (_log.isDebugEnabled())
-      _log.debug("Updating user name '" + getHandle() + "' refresh status to: '" + sRefresh + "'");
+      _log.debug("Updating user name '" + getHandle() + "' refresh status to: '" + (b ? "Y" : "N") + "'");
 
     try {
-      Connection conn = DBUtils.getConnection();
-      PreparedStatement stmt = conn.prepareStatement("UPDATE accounts set refresh=? where account_id=?");
-      stmt.setString(1, sRefresh);
-      stmt.setInt(2, getAccountID());
-      executeSQL(stmt);
+      int updated = AccountDAO.getInstance().setRefresh(getAccountID(), b);
+      if (updated == 0) throw new AccountUpdateException("Update Count=0");
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       throw new AccountUpdateException();
@@ -97,17 +92,12 @@ public class AccountInfo {
   }
 
   public void setPrimaryInd(boolean b) throws AccountUpdateException {
-    String sRefresh = (b ? "Y" : "N");
-
     if (_log.isDebugEnabled())
       _log.debug(
-          "Updating user name '" + getHandle() + "' primary account status to: '" + sRefresh + "'");
+          "Updating user name '" + getHandle() + "' primary account status to: '" + (b ? "Y" : "N") + "'");
     try {
-      Connection conn = DBUtils.getConnection();
-      PreparedStatement stmt = conn.prepareStatement("UPDATE accounts set primary_ind='" + sRefresh + "' where account_id=" + getAccountID());
-      stmt.setString(1, sRefresh);
-      stmt.setInt(2, getAccountID());
-      executeSQL(stmt);
+      int updated = AccountDAO.getInstance().setPrimaryInd(getAccountID(), b);
+      if (updated == 0) throw new AccountUpdateException("Update Count=0");
     } catch (SQLException e) {
       _log.error("SQL Exception",e);
       throw new AccountUpdateException();
@@ -127,56 +117,11 @@ public class AccountInfo {
   public void delete() throws AccountUpdateException {
     _log.debug("Deleting account for '" + getHandle() + "'");
     try {
-      Connection conn = DBUtils.getConnection();
-      PreparedStatement stmt = conn.prepareStatement("DELETE from accounts WHERE account_id=?");
-      stmt.setInt(1, getAccountID());
-      executeSQL(stmt);
+      int updated = AccountDAO.getInstance().delete(getAccountID());
+      if (updated == 0) throw new AccountUpdateException("Update Count=0");
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       throw new AccountUpdateException();
-    }
-  }
-
-  /**
-   * @param sql
-   * @throws AccountUpdateException
-   */
-  /*private void executeSQL(String sql) throws AccountUpdateException {
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
-
-    try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
-      stmt.execute(sql);
-      if (stmt.getUpdateCount() == 0) throw new AccountUpdateException("Update Count=0");
-    } catch (SQLException e) {
-      _log.error("SQL Exception", e);
-      throw new AccountUpdateException();
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
-    }
-  }*/
-
-  private void executeSQL(PreparedStatement stmt) throws AccountUpdateException {
-    try {
-      stmt.execute();
-      if (stmt.getUpdateCount() == 0) throw new AccountUpdateException("Update Count=0");
-    } catch (SQLException e) {
-      _log.error("SQL Exception",e);
-      throw new AccountUpdateException();
-    } finally {
-      Connection conn = null;
-      try {
-        conn = stmt.getConnection();
-      } catch (SQLException e) {
-        // Ignore
-      }
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
@@ -192,11 +137,8 @@ public class AccountInfo {
   public void setUserID(int userID) throws AccountUpdateException {
     _log.debug("Setting userid for '" + getHandle() + "' to: " + userID);
     try {
-      Connection conn = DBUtils.getConnection();
-      PreparedStatement stmt = conn.prepareStatement("UPDATE accounts SET user_id=? where account_id=?");
-      stmt.setInt(1, userID);
-      stmt.setInt(2, getAccountID());
-      executeSQL(stmt);
+      int updated = AccountDAO.getInstance().setUserId(getAccountID(), userID);
+      if (updated == 0) throw new AccountUpdateException("Update Count=0");
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       throw new AccountUpdateException();
@@ -205,34 +147,19 @@ public class AccountInfo {
   }
 
   public UserInfo getUserInfo() {
-    UserInfo info;
-
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
-    List l = new ArrayList();
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
       _log.debug("Getting user information for account: '" + getHandle() + "'");
-      rs =
-          stmt.executeQuery(
-              "SELECT name, city, state, country, email FROM users where user_id=" + getUserID());
-      if (rs.next()) {
+      User user = UserDAO.getInstance().findUserInfo(getUserID());
+      if (user != null) {
         return new UserInfo(
-            rs.getString("name"),
-            rs.getString("city"),
-            rs.getString("state"),
-            rs.getString("country"),
-            rs.getString("email"));
+            user.getName(),
+            user.getCity(),
+            user.getState(),
+            user.getCountry(),
+            user.getEmail());
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return null;
   }
