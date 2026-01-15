@@ -24,7 +24,8 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.*;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
@@ -43,7 +44,7 @@ public class ObserveGame extends AbstractState {
   class QueuedGameListener implements ObservedGameEventListener {
     private boolean _bCaughtUp = false;
     private boolean _bSuspended = false;
-    private Vector v = new Vector();
+    private List<Action> v = new ArrayList<>();
     private PlayBackMoves _pm = null;
 
     private void suspend() {
@@ -78,9 +79,8 @@ public class ObserveGame extends AbstractState {
 
     /** */
     private void dequeue() {
-      Action a;
       if (v.size() != 0 && !_bSuspended) {
-        a = (Action) v.remove(0);
+        Action a = v.remove(0);
         _session.send(a);
         if (a instanceof NoMoreMoves) {
           _bCaughtUp = true;

@@ -26,7 +26,11 @@ package org.jbrain.qlink;
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.cmd.action.Action;
@@ -44,13 +48,13 @@ public class QSession {
   private QState _state;
   private Connection _conn = null;
   private Date _startTime;
-  private Hashtable _htOLMTable = new Hashtable();
+  private Map<String, String[]> _htOLMTable = new ConcurrentHashMap<>();
   private int _iOLMID = 0;
   private int _iOLMReadID = 0;
   public static final String OLM_PREFIX = "OLM";
   private boolean _bOLMs;
   private QLinkServer _server;
-  private Vector _listeners = new Vector();
+  private List<SessionEventListener> _listeners = new CopyOnWriteArrayList<>();
   private QHandle _handle;
 
   private ConnEventListener _linklistener =
@@ -149,19 +153,16 @@ public class QSession {
 
   /** @param olm */
   public void sendOLM(String[] olm) {
-    String id;
     _log.debug("Preparing OLM for user:" + getHandle());
-    synchronized (_htOLMTable) {
-      DecimalFormat sdf = new DecimalFormat("0000000");
-      id = OLM_PREFIX + sdf.format(_iOLMID++);
-      _htOLMTable.put(id, olm);
-    }
+    DecimalFormat sdf = new DecimalFormat("0000000");
+    String id = OLM_PREFIX + sdf.format(_iOLMID++);
+    _htOLMTable.put(id, olm);
     // send ONOLM command.
     send(new SendOLM(id));
   }
 
   public String[] getOLM(String id) {
-    return (String[]) _htOLMTable.remove(id);
+    return _htOLMTable.remove(id);
   }
 
   public void enableOLMs(boolean state) {
@@ -265,25 +266,25 @@ public class QSession {
   }
 
   protected void processUserNameChangeEvent(UserNameChangeEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((SessionEventListener) _listeners.get(i)).userNameChanged(event);
+    if (event != null) {
+      for (SessionEventListener listener : _listeners) {
+        listener.userNameChanged(event);
       }
     }
   }
 
   protected void processStateChangeEvent(StateChangeEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((SessionEventListener) _listeners.get(i)).stateChanged(event);
+    if (event != null) {
+      for (SessionEventListener listener : _listeners) {
+        listener.stateChanged(event);
       }
     }
   }
 
   protected void processTerminationEvent(TerminationEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((SessionEventListener) _listeners.get(i)).sessionTerminated(event);
+    if (event != null) {
+      for (SessionEventListener listener : _listeners) {
+        listener.sessionTerminated(event);
       }
     }
   }

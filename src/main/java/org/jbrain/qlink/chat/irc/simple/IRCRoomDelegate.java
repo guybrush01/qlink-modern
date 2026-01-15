@@ -23,7 +23,16 @@ Created on Oct 2, 2005
 */
 package org.jbrain.qlink.chat.irc.simple;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QConfig;
@@ -48,9 +57,9 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
   private static IRCConnection _ircConn = null;
   private static AutoReconnect _autoReconnect;
 
-  private static Hashtable _htRooms = new Hashtable();
+  private static Map<String, IRCRoomDelegate> _htRooms = new ConcurrentHashMap<>();
 
-  private HashSet _hsIRCUsers = new HashSet();
+  private Set<String> _hsIRCUsers = new HashSet<>();
   private AutoJoin _autoJoin;
   private String _sChannel;
   protected static boolean _bConnected;
@@ -83,12 +92,9 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
       new Observer() {
 
         public void update(Observable obj, Object event) {
-          IRCRoomDelegate room;
           if (event == State.UNCONNECTED) {
             _log.debug("IRC server disconnected");
-            Iterator i = _htRooms.values().iterator();
-            while (i.hasNext()) {
-              room = (IRCRoomDelegate) i.next();
+            for (IRCRoomDelegate room : _htRooms.values()) {
               room.clearIRCUsers();
               room.setJoinedStatus(false);
             }
@@ -280,7 +286,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
    * @return
    */
   private static IRCRoomDelegate getRoom(String channel) {
-    return (IRCRoomDelegate) _htRooms.get(channel.toLowerCase());
+    return _htRooms.get(channel.toLowerCase());
   }
 
   /** @param arg1 */
@@ -492,7 +498,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
    */
   public static QRoomDelegate getInstance(String name, boolean bPublic, boolean bLocked) {
     String channel = "#" + new QHandle(name.substring(4)).getKey();
-    QRoomDelegate room = (QRoomDelegate) _htRooms.get(channel);
+    QRoomDelegate room = _htRooms.get(channel);
     if (room == null) room = new IRCRoomDelegate(name, bPublic, bLocked);
     return room;
   }

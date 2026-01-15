@@ -24,7 +24,12 @@ Created on Jul 28, 2005
 package org.jbrain.qlink.chat;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.db.dao.AuditoriumDAO;
@@ -55,11 +60,11 @@ class Question {
 class AuditoriumDelegate extends RoomDelegate {
   private static Logger _log = Logger.getLogger(AuditoriumDelegate.class);
   private static QHandle _qlink = new QHandle("Q-Link");
-  private List _queue = Collections.synchronizedList(new ArrayList());
+  private List<Question> _queue = Collections.synchronizedList(new ArrayList<>());
   private boolean _bAcceptingQuestions = false; //Auditorium Talk
-  private List _vRegList = new Vector();
+  private List<QSeat> _vRegList = new CopyOnWriteArrayList<>();
   private AutoText _autoTalk;
-  private Hashtable _htViewers = new Hashtable();
+  private Map<String, QSeat> _htViewers = new ConcurrentHashMap<>();
   private static final int ID_VIEWER = 200;
 
   class AutoText extends Thread {
@@ -93,7 +98,7 @@ class AuditoriumDelegate extends RoomDelegate {
   public QSeat[] getSeatInfoList(QHandle handle) {
     // get list of speakers/moderators.
     QSeat[] seats = super.getSeatInfoList(handle);
-    QSeat seat = (QSeat) _htViewers.get(handle.getKey());
+    QSeat seat = _htViewers.get(handle.getKey());
     if (seat != null) {
       QSeat[] seats2 = new SeatInfo[seats.length + 1];
       System.arraycopy(seats, 0, seats2, 0, seats.length);
@@ -113,10 +118,10 @@ class AuditoriumDelegate extends RoomDelegate {
     _queue.add(new Question(handle, question));
 
     if (_vRegList.size() > 0) {
-      ArrayList alMsg = new ArrayList();
+      ArrayList<String> alMsg = new ArrayList<>();
       privmsgQuestion(alMsg, _queue.size() - 1);
-      for (int i = 0, size = _vRegList.size(); i < size; i++) {
-        sendSystemMessage(((QSeat) _vRegList.get(i)), alMsg);
+      for (QSeat seat : _vRegList) {
+        sendSystemMessage(seat, alMsg);
       }
     }
   }
@@ -151,16 +156,16 @@ class AuditoriumDelegate extends RoomDelegate {
       }
     }
   }
-// this 
+// this
   /**
    * @param seat
    * @param text
    */
   protected void processCommand(SeatInfo seat, String text) {
-    ArrayList alMsg = new ArrayList();
+    ArrayList<String> alMsg = new ArrayList<>();
     String[] cmdline = text.split(" ");
     String cmd = cmdline[0].toLowerCase();
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     int pos = 0;
 
     if (cmd.startsWith("sho") || cmd.startsWith("air")) {
@@ -168,7 +173,7 @@ class AuditoriumDelegate extends RoomDelegate {
       if (cmdline.length > 1) pos = getNumber(cmdline[1]);
       if (pos > -1 && pos < _queue.size()) {
         _log.debug("Showing question: " + pos);
-        Question q = (Question) _queue.remove(pos);
+        Question q = _queue.remove(pos);
         for (int i = 0, size = q.getQuestion().length; i < size; i++) {
           sb.append(q.getQuestion()[i]);
           sb.append(" ");
@@ -189,7 +194,7 @@ class AuditoriumDelegate extends RoomDelegate {
       if (cmdline.length > 1) pos = getNumber(cmdline[1]);
       if (pos > -1 && pos < _queue.size()) {
         _log.debug("Deleting question: " + pos);
-        Question q = (Question) _queue.remove(pos);
+        _queue.remove(pos);
         alMsg.add("Question " + pos + " deleted.");
         sendSystemMessage(seat, alMsg);
       }
@@ -244,8 +249,8 @@ class AuditoriumDelegate extends RoomDelegate {
   }
 
   /** @param pos */
-  private void privmsgQuestion(List l, int pos) {
-    Question q = (Question) _queue.get(pos);
+  private void privmsgQuestion(List<String> l, int pos) {
+    Question q = _queue.get(pos);
     l.add("Question#: " + pos + " from " + q.getHandle() + ":");
     for (int i = 0, size = q.getQuestion().length; i < size; i++) l.add(q.getQuestion()[i]);
   }
@@ -284,15 +289,16 @@ class AuditoriumDelegate extends RoomDelegate {
   }
 
   public synchronized void processQuestionStateEvent(QuestionStateEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS)
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).acceptingQuestions(event);
+    if (event != null) {
+      if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS) {
+        for (RoomEventListener listener : _listeners) {
+          listener.acceptingQuestions(event);
         }
-      else
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).rejectingQuestions(event);
+      } else {
+        for (RoomEventListener listener : _listeners) {
+          listener.rejectingQuestions(event);
         }
+      }
     }
   }
 

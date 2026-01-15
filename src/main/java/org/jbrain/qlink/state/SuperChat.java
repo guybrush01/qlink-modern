@@ -24,7 +24,8 @@ Created on Oct 7, 2005
 package org.jbrain.qlink.state;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QSession;
@@ -40,7 +41,7 @@ import org.jbrain.qlink.util.QuotedStringTokenizer;
 
 public class SuperChat extends Chat {
   private static Logger _log = Logger.getLogger(SuperChat.class);
-  private static Hashtable _menus = new Hashtable();
+  private static Map<Integer, FDOMenuHelper> _menus = new HashMap<>();
   private static final FDOItemID ID_MAIN_MENU = new FDOItemID(0x0f0000);
 
   static {
@@ -63,7 +64,7 @@ public class SuperChat extends Chat {
     helper.add(FDOMenuItem.SAVE);
     helper.add(FDOMenuItem.SEND_EMAIL);
     helper.add(FDOMenuItem.SEND_OLM);
-    _menus.put(new Integer(ID_MAIN_MENU.getID()), helper);
+    _menus.put(ID_MAIN_MENU.getID(), helper);
   }
 
   /** @param session */
@@ -79,7 +80,7 @@ public class SuperChat extends Chat {
     if (a instanceof SelectMenuItem) {
       id = ((SelectMenuItem) a).getID();
       _log.debug("User requests menu item: " + id);
-      helper = (FDOMenuHelper) _menus.get(new Integer(id));
+      helper = _menus.get(id);
       if (helper == null) {
         helper = new FDOMenuHelper();
         helper.add(new FDOMenuItem("Invalid", new FDOSelectItemResponse("K1", 0)));

@@ -23,7 +23,12 @@ Created on Jul 26, 2005
 */
 package org.jbrain.qlink.chat;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.user.QHandle;
@@ -33,16 +38,14 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   private static Logger _log = Logger.getLogger(AbstractRoomDelegate.class);
   protected static final String SYS_NAME = "System";
   private String _sName;
-  // private SeatInfo[] _users = new SeatInfo[ROOM_CAPACITY];
-  protected Hashtable _htUsers = new Hashtable();
-  protected Hashtable _htAdmins = new Hashtable();
-  protected ArrayList _listeners = new ArrayList();
+  protected Map<String, SeatInfo> _htUsers = new ConcurrentHashMap<>();
+  protected Map<String, SeatInfo> _htAdmins = new ConcurrentHashMap<>();
+  protected List<RoomEventListener> _listeners = new CopyOnWriteArrayList<>();
   private boolean _bPublic;
   private boolean _bLocked;
   private static Random _die = new Random();
   private static String[] _sResponses = new String[20];
-  // private GameDelegate[] _userGame = new GameDelegate[ROOM_CAPACITY];
-  protected ArrayList _alGames = new ArrayList();
+  protected List<GameDelegate> _alGames = new ArrayList<>();
 
   static {
     // probably should go into a DB or something
@@ -152,23 +155,19 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
 
   /** @return */
   public GameInfo[] getGameInfoList() {
-    int size;
-    GameDelegate game;
-    GameInfo[] info;
     synchronized (_alGames) {
-      size = _alGames.size();
-      info = new GameInfo[size];
+      int size = _alGames.size();
+      GameInfo[] info = new GameInfo[size];
       for (int i = 0; i < size; i++) {
-        game = (GameDelegate) _alGames.get(i);
+        GameDelegate game = _alGames.get(i);
         info[i] = new GameInfo(game.getName(), game.getPlayOrder());
       }
+      return info;
     }
-    return info;
   }
 
   public QSeat getSeatInfo(QHandle handle) {
-    // synchronized on the table
-    return (QSeat) _htUsers.get(handle.getKey());
+    return _htUsers.get(handle.getKey());
   }
 
   /**
@@ -176,12 +175,12 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
    * @return
    */
   private QSeat getAdminSeatInfo(QHandle handle) {
-    return (QSeat) _htAdmins.get(handle.getKey());
+    return _htAdmins.get(handle.getKey());
   }
 
   public void leave(QHandle handle) {
     synchronized (_htUsers) {
-      QSeat seat = getSeatInfo(handle);
+      SeatInfo seat = _htUsers.get(handle.getKey());
       // was this seat filled?
       if (seat != null) {
         leaveSeat(seat);
@@ -195,10 +194,9 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
    * @see org.jbrain.qlink.chat.QRoomDelegate#changeUserName(org.jbrain.qlink.chat.QSeat, org.jbrain.qlink.user.QHandle)
    */
   public boolean changeUserName(QHandle oldHandle, QHandle handle, ChatProfile profile) {
-    QSeat seat = getSeatInfo(oldHandle);
+    SeatInfo seat = _htUsers.get(oldHandle.getKey());
     if (seat != null) {
-      SeatInfo info = (SeatInfo) seat;
-      if (!info.isInGame()) {
+      if (!seat.isInGame()) {
         leaveSeat(seat);
         SeatInfo newUser = new SeatInfo(handle, seat.getSeatID(), profile);
         newUser.setIgnore(seat.isIgnored());
@@ -260,43 +258,45 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   }
 
   protected void processJoinEvent(JoinEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      if (event.getType() == JoinEvent.EVENT_JOIN)
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).userJoined(event);
+    if (event != null) {
+      if (event.getType() == JoinEvent.EVENT_JOIN) {
+        for (RoomEventListener listener : _listeners) {
+          listener.userJoined(event);
         }
-      else
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).userLeft(event);
+      } else {
+        for (RoomEventListener listener : _listeners) {
+          listener.userLeft(event);
         }
+      }
     }
   }
 
   protected void processQuestionStateEvent(QuestionStateEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS)
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).acceptingQuestions(event);
+    if (event != null) {
+      if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS) {
+        for (RoomEventListener listener : _listeners) {
+          listener.acceptingQuestions(event);
         }
-      else
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).rejectingQuestions(event);
+      } else {
+        for (RoomEventListener listener : _listeners) {
+          listener.rejectingQuestions(event);
         }
+      }
     }
   }
 
   protected void processSystemMessageEvent(SystemMessageEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((RoomEventListener) _listeners.get(i)).systemSent(event);
+    if (event != null) {
+      for (RoomEventListener listener : _listeners) {
+        listener.systemSent(event);
       }
     }
   }
 
   protected void processChatEvent(ChatEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((RoomEventListener) _listeners.get(i)).userSaid(event);
+    if (event != null) {
+      for (RoomEventListener listener : _listeners) {
+        listener.userSaid(event);
       }
     }
   }
@@ -412,7 +412,7 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   }
 
   /** @param user */
-  protected void takeSeat(QSeat user) {
+  protected void takeSeat(SeatInfo user) {
     if (_log.isDebugEnabled())
       _log.debug("Adding '" + user.getHandle() + "' to room: " + getName());
     _htUsers.put(user.getHandle().getKey(), user);
@@ -420,7 +420,7 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   }
 
   /** @param user */
-  protected void leaveSeat(QSeat user) {
+  protected void leaveSeat(SeatInfo user) {
     if (_log.isDebugEnabled())
       _log.debug("Removing '" + user.getHandle() + "' from room: " + getName());
     _htUsers.remove(user.getHandle().getKey());

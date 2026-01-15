@@ -25,7 +25,8 @@ package org.jbrain.qlink.connection;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Vector;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.QLinkServer;
@@ -71,7 +72,7 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
   private int _iQLen;
 
   // Event listeners
-  private final Vector _listeners = new Vector();
+  private final List<ConnEventListener> _listeners = new CopyOnWriteArrayList<>();
 
   // Timer management
   private final ConnectionTimerManager _timerManager;
@@ -468,9 +469,9 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
   }
 
   protected void processActionEvent(ActionEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((ConnEventListener) _listeners.get(i)).actionOccurred(event);
+    if (event != null) {
+      for (ConnEventListener listener : _listeners) {
+        listener.actionOccurred(event);
       }
     }
   }

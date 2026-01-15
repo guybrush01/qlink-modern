@@ -27,18 +27,16 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.commons.cli.PosixParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -60,8 +58,8 @@ public class QLinkServer {
 
   private static Logger _log = Logger.getLogger(QLinkServer.class);
   private static PropertiesConfiguration _config = null;
-  private Vector _vSessions = new Vector();
-  private Hashtable _htSessions = new Hashtable();
+  private List<QSession> _vSessions = new CopyOnWriteArrayList<>();
+  private Map<String, QSession> _htSessions = new ConcurrentHashMap<>();
   private Date _started = new Date();
   private Date _newest;
   private static int _iSessionCount = 0;
@@ -102,7 +100,7 @@ public class QLinkServer {
     }
     if (session != null
         && session.getHandle() != null
-        && !_htSessions.contains(session.getHandle().getKey())) {
+        && !_htSessions.containsKey(session.getHandle().getKey())) {
       _log.info("Adding session to session map: " + session.getHandle().getKey());
       _htSessions.put(session.getHandle().getKey(), session);
     }
@@ -123,14 +121,8 @@ public class QLinkServer {
 
   /** @param msg */
   public void sendSYSOLM(String msg) {
-    QSession s;
-
-    synchronized (_htSessions) {
-      Iterator i = _htSessions.values().iterator();
-      while (i.hasNext()) {
-        s = (QSession) i.next();
-        s.sendSYSOLM(msg);
-      }
+    for (QSession s : _htSessions.values()) {
+      s.sendSYSOLM(msg);
     }
   }
 
@@ -196,7 +188,7 @@ public class QLinkServer {
   }
 
   private QSession getSession(QHandle handle) {
-    return (QSession) _htSessions.get(handle.getKey());
+    return _htSessions.get(handle.getKey());
   }
 
   /**
@@ -205,10 +197,8 @@ public class QLinkServer {
    * @param handle
    */
   private void changeUserName(QSession session, QHandle oldHandle, QHandle handle) {
-    synchronized (_htSessions) {
-      if (oldHandle != null) _htSessions.remove(oldHandle.getKey());
-      _htSessions.put(handle.getKey(), session);
-    }
+    if (oldHandle != null) _htSessions.remove(oldHandle.getKey());
+    _htSessions.put(handle.getKey(), session);
   }
 
   /** @param args */
@@ -254,37 +244,42 @@ public class QLinkServer {
   private static CommandLine parseArgs(String[] args) {
     Options options = new Options();
     Option configFile =
-        OptionBuilder.withArgName("configFile")
+        Option.builder("configFile")
+            .argName("configFile")
             .hasArg()
-            .withDescription("Location of the QLink Reloaded configuration file")
-            .create("configFile");
+            .desc("Location of the QLink Reloaded configuration file")
+            .build();
     Option port =
-        OptionBuilder.withArgName("qtcpPort")
+        Option.builder("qtcpPort")
+            .argName("qtcpPort")
             .hasArg()
-            .withDescription("Port to serve QLink Reloaded service on (default 5190)")
-            .create("qtcpPort");
+            .desc("Port to serve QLink Reloaded service on (default 5190)")
+            .build();
     Option host =
-        OptionBuilder.withArgName("qtcpHost")
+        Option.builder("qtcpHost")
+            .argName("qtcpHost")
             .hasArg()
-            .withDescription("Host to serve QLink Reloaded service on (default 0.0.0.0)")
-            .create("qtcpHost");
+            .desc("Host to serve QLink Reloaded service on (default 0.0.0.0)")
+            .build();
     Option habilinkPort =
-        OptionBuilder.withArgName("habilinkPort")
+        Option.builder("habilinkPort")
+            .argName("habilinkPort")
             .hasArg()
-            .withDescription("Port to serve Habilink proxy on (default 5190)")
-            .create("habilinkPort");
+            .desc("Port to serve Habilink proxy on (default 5190)")
+            .build();
     Option habilinkHost =
-        OptionBuilder.withArgName("habilinkHost")
+        Option.builder("habilinkHost")
+            .argName("habilinkHost")
             .hasArg()
-            .withDescription("Host to serve Habilink proxy on (default 0.0.0.0)")
-            .create("habilinkHost");
+            .desc("Host to serve Habilink proxy on (default 0.0.0.0)")
+            .build();
     options.addOption(configFile);
     options.addOption(port);
     options.addOption(host);
     options.addOption(habilinkPort);
     options.addOption(habilinkHost);
     // create the parser
-    CommandLineParser parser = new PosixParser();
+    CommandLineParser parser = new DefaultParser();
     try {
       // Return parsed command line arguments.
       return parser.parse(options, args);
@@ -301,21 +296,16 @@ public class QLinkServer {
   /** */
   public void reboot(String text) {
     _log.info("Rebooting the server");
-    QSession session;
     if (text == null || text.length() == 0) {
       SimpleDateFormat df = new SimpleDateFormat("HH:mm");
       text =
           "The system has shut down.  It will be back up at " + df.format(new Date()) + " Central.";
     }
-    synchronized (_htSessions) {
-      Iterator i = _htSessions.values().iterator();
-      while (i.hasNext()) {
-        session = (QSession) i.next();
-        session.send(new Toss(text));
-      }
-      _log.info("Exitting the server to launch again");
-      System.exit(0);
+    for (QSession session : _htSessions.values()) {
+      session.send(new Toss(text));
     }
+    _log.info("Exitting the server to launch again");
+    System.exit(0);
   }
 
   public static void main(String[] args) {

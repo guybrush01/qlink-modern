@@ -73,7 +73,6 @@ public class FDOSelectItemResponse extends AbstractFDOResponse {
    * @see org.jbrain.qlink.cmd.action.fdo.FDOCommand#size()
    */
   public int size() {
-    // TODO Auto-generated method stub
     return 7;
   }
 }

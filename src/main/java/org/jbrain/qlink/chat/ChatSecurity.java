@@ -25,9 +25,6 @@ package org.jbrain.qlink.chat;
 
 public class ChatSecurity {
 
-  /** */
   public ChatSecurity() {
-    super();
-    // TODO Auto-generated constructor stub
   }
 }

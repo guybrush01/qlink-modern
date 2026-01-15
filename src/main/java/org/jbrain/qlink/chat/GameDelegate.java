@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.user.QHandle;
@@ -39,15 +39,15 @@ public class GameDelegate {
   private boolean _bSystemPickOrder;
 
   private RoomDelegate _room;
-  private ArrayList _alPlayers = new ArrayList();
+  private List<SeatInfo> _alPlayers = new ArrayList<>();
   private byte[] _seats;
-  private ArrayList _listeners = new ArrayList();
+  private List<GameEventListener> _listeners = new CopyOnWriteArrayList<>();
   private int _iID;
-  private ArrayList _alDeclineList = new ArrayList();
-  private ArrayList _alAcceptList = new ArrayList();
-  private ArrayList _alAbstainList = new ArrayList();
+  private List<SeatInfo> _alDeclineList = new ArrayList<>();
+  private List<SeatInfo> _alAcceptList = new ArrayList<>();
+  private List<SeatInfo> _alAbstainList = new ArrayList<>();
   private boolean _bActive = true;
-  private Vector _vGameLog = new Vector();
+  private List<RoomEvent> _vGameLog = new CopyOnWriteArrayList<>();
 
   /**
    * @param name
@@ -70,9 +70,8 @@ public class GameDelegate {
    * @throws UserNotInRoomException
    */
   public boolean addPlayer(QHandle handle) throws UserNotInRoomException {
-    QSeat info;
     synchronized (_room) {
-      info = _room.addUserToGame(handle, this);
+      SeatInfo info = (SeatInfo) _room.addUserToGame(handle, this);
       if (info == null) {
         _log.debug("Could not add '" + handle + "' to game: " + _sName);
         return false;
@@ -89,13 +88,13 @@ public class GameDelegate {
 
   /** @return */
   public byte[] getPlayOrder() {
-    List l;
+    List<SeatInfo> l;
     Random r = new Random();
 
     synchronized (_alDeclineList) {
       if (_bSystemPickOrder) {
-        List orig = new ArrayList(_alPlayers);
-        l = new ArrayList();
+        List<SeatInfo> orig = new ArrayList<>(_alPlayers);
+        l = new ArrayList<>();
         while (orig.size() > 0) {
           l.add(orig.remove(r.nextInt(orig.size())));
         }
@@ -107,7 +106,7 @@ public class GameDelegate {
     if (_seats == null) {
       _seats = new byte[l.size()];
       for (int i = 0; i < _seats.length; i++) {
-        _seats[i] = (byte) ((SeatInfo) l.get(i)).getSeatID();
+        _seats[i] = (byte) l.get(i).getSeatID();
       }
     }
     return _seats;
@@ -115,7 +114,7 @@ public class GameDelegate {
 
   /** @return */
   public SeatInfo[] getPlayers() {
-    return (SeatInfo[]) _alPlayers.toArray(new SeatInfo[0]);
+    return _alPlayers.toArray(new SeatInfo[0]);
   }
 
   /** */
@@ -168,27 +167,21 @@ public class GameDelegate {
     // let everyone watching this game know.
     processEvent(new GameTerminationEvent(this));
     synchronized (_alDeclineList) {
-      while (_alPlayers.size() > 0) removePlayer((SeatInfo) _alPlayers.get(0));
+      while (_alPlayers.size() > 0) removePlayer(_alPlayers.get(0));
     }
-    synchronized (_listeners) {
-      _listeners.clear();
-    }
+    _listeners.clear();
     _room.destroyGame(this);
     _bActive = false;
   }
 
   /** @param _listener */
   public void addListener(GameEventListener listener) {
-    synchronized (_listeners) {
-      _listeners.add(listener);
-    }
+    _listeners.add(listener);
   }
 
   /** @param listener */
   public void removeListener(GameEventListener listener) {
-    synchronized (_listeners) {
-      _listeners.remove(listener);
-    }
+    _listeners.remove(listener);
   }
 
   /**
@@ -261,7 +254,7 @@ public class GameDelegate {
   }
 
   /** @return */
-  public List getAbstainList() {
+  public List<SeatInfo> getAbstainList() {
     return Collections.unmodifiableList(_alAbstainList);
   }
 
@@ -337,45 +330,43 @@ public class GameDelegate {
 
   /** @param event */
   protected void processGameCommEvent(GameCommEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((GameEventListener) _listeners.get(i)).gameSent(event);
+    if (event != null) {
+      for (GameEventListener listener : _listeners) {
+        listener.gameSent(event);
       }
     }
   }
 
   protected void processStartGameEvent(StartGameEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((GameEventListener) _listeners.get(i)).gameStarted(event);
+    if (event != null) {
+      for (GameEventListener listener : _listeners) {
+        listener.gameStarted(event);
       }
     }
   }
 
   protected void processGameEvent(GameEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((GameEventListener) _listeners.get(i)).eventOccurred(event);
+    if (event != null) {
+      for (GameEventListener listener : _listeners) {
+        listener.eventOccurred(event);
       }
     }
   }
 
   protected void processGameTerminationEvent(GameTerminationEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      for (int i = 0, size = _listeners.size(); i < size; i++) {
-        ((GameEventListener) _listeners.get(i)).gameTerminated(event);
+    if (event != null) {
+      for (GameEventListener listener : _listeners) {
+        listener.gameTerminated(event);
       }
     }
   }
 
   protected void processEvent(RoomEvent event) {
-    synchronized (_listeners) {
-      if (event instanceof GameCommEvent) processGameCommEvent((GameCommEvent) event);
-      else if (event instanceof GameEvent) processGameEvent((GameEvent) event);
-      else if (event instanceof GameTerminationEvent)
-        processGameTerminationEvent((GameTerminationEvent) event);
-      else if (event instanceof StartGameEvent) processStartGameEvent((StartGameEvent) event);
-    }
+    if (event instanceof GameCommEvent) processGameCommEvent((GameCommEvent) event);
+    else if (event instanceof GameEvent) processGameEvent((GameEvent) event);
+    else if (event instanceof GameTerminationEvent)
+      processGameTerminationEvent((GameTerminationEvent) event);
+    else if (event instanceof StartGameEvent) processStartGameEvent((StartGameEvent) event);
   }
 
   /**
@@ -402,7 +393,7 @@ public class GameDelegate {
   /** @param seat */
   private void addAccept(QSeat seat) {
     synchronized (_alDeclineList) {
-      _alAcceptList.add(seat);
+      _alAcceptList.add((SeatInfo) seat);
       _alAbstainList.remove(seat);
     }
   }
@@ -410,7 +401,7 @@ public class GameDelegate {
   /** @param seat */
   private void addDecline(QSeat seat) {
     synchronized (_alDeclineList) {
-      _alDeclineList.add(seat);
+      _alDeclineList.add((SeatInfo) seat);
       _alAbstainList.remove(seat);
     }
   }

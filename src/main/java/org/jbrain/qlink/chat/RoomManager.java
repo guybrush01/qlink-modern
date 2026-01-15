@@ -23,7 +23,11 @@ Created on Jul 26, 2005
 */
 package org.jbrain.qlink.chat;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.chat.irc.simple.IRCRoomDelegate;
@@ -35,11 +39,11 @@ import org.jbrain.qlink.user.QHandle;
  */
 public class RoomManager {
   private static Logger _log = Logger.getLogger(RoomManager.class);
-  private Hashtable _htPublicRooms = new Hashtable();
-  private static Hashtable _htPrivateRooms = new Hashtable();
+  private Map<String, QRoomDelegate> _htPublicRooms = new ConcurrentHashMap<>();
+  private static Map<String, QRoomDelegate> _htPrivateRooms = new ConcurrentHashMap<>();
   private static final String ROOM_LOBBY = "Lobby";
   private static AuditoriumDelegate _auditorium;
-  private static ArrayList _listeners = new ArrayList();
+  private static List<RoomManagerEventListener> _listeners = new CopyOnWriteArrayList<>();
   private static RoomManager _mgr = new RoomManager();
 
   private RoomManager() {
@@ -136,40 +140,30 @@ public class RoomManager {
   }
 
   public RoomInfo[] getRoomInfoList() {
-    QRoomDelegate room;
-    int pop;
-    // synchronized on the hashtable
-    List l = new ArrayList(_htPublicRooms.values());
-    List info = new ArrayList();
-    for (int i = 0; i < l.size(); i++) {
-      room = (QRoomDelegate) l.get(i);
-      pop = room.getPopulation();
+    List<RoomInfo> info = new ArrayList<>();
+    for (QRoomDelegate room : _htPublicRooms.values()) {
+      int pop = room.getPopulation();
       if (pop != 0) info.add(new RoomInfo(room.getName(), pop, room.isPublicRoom()));
     }
-    return (RoomInfo[]) info.toArray(new RoomInfo[info.size()]);
+    return info.toArray(new RoomInfo[0]);
   }
 
-  public List getRoomList() {
-    List l = new ArrayList(_htPublicRooms.values());
+  public List<QRoomDelegate> getRoomList() {
+    List<QRoomDelegate> l = new ArrayList<>(_htPublicRooms.values());
     l.addAll(_htPrivateRooms.values());
     return l;
   }
 
-  public synchronized void removeEventListener(RoomManagerEventListener listener) {
+  public void removeEventListener(RoomManagerEventListener listener) {
     _listeners.remove(listener);
   }
 
-  public synchronized void addEventListener(RoomManagerEventListener listener) {
+  public void addEventListener(RoomManagerEventListener listener) {
     _listeners.add(listener);
   }
 
   public RoomInfo getUserLocation(QHandle handle) {
-    // this will get all the rooms in a syncrhonized way
-    List l = this.getRoomList();
-    QRoomDelegate room;
-
-    for (int i = 0; i < l.size(); i++) {
-      room = (QRoomDelegate) l.get(i);
+    for (QRoomDelegate room : getRoomList()) {
       if (room.getSeatInfo(handle) != null)
         return new RoomInfo(room.getName(), room.getPopulation(), room.isPublicRoom());
     }
@@ -188,20 +182,21 @@ public class RoomManager {
   }
 
   private synchronized void processEvent(RoomManagerEvent event) {
-    if (event != null && _listeners.size() > 0) {
-      if (event.getType() == RoomManagerEvent.EVENT_ADD)
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomManagerEventListener) _listeners.get(i)).roomAdded(event);
+    if (event != null) {
+      if (event.getType() == RoomManagerEvent.EVENT_ADD) {
+        for (RoomManagerEventListener listener : _listeners) {
+          listener.roomAdded(event);
         }
-      else
-        for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomManagerEventListener) _listeners.get(i)).roomRemoved(event);
+      } else {
+        for (RoomManagerEventListener listener : _listeners) {
+          listener.roomRemoved(event);
         }
+      }
     }
   }
 
   private QRoomDelegate getPublicRoom(String name) {
-    QRoomDelegate room = (QRoomDelegate) _htPublicRooms.get(name.toLowerCase());
+    QRoomDelegate room = _htPublicRooms.get(name.toLowerCase());
     if (room == null) {
       room = createRoom(name, true);
       addPublicRoom(room);
@@ -223,7 +218,7 @@ public class RoomManager {
   }
 
   private QRoomDelegate getPrivateRoom(String name) {
-    QRoomDelegate room = (QRoomDelegate) _htPrivateRooms.get(name.toLowerCase());
+    QRoomDelegate room = _htPrivateRooms.get(name.toLowerCase());
     if (room == null) {
       room = createRoom(name, false);
       addPrivateRoom(room);

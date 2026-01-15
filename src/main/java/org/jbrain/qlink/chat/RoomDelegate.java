@@ -149,7 +149,7 @@ public class RoomDelegate extends AbstractRoomDelegate {
   /** @param handle */
   public boolean addUser(QHandle handle, ChatProfile security) {
     synchronized (_htUsers) {
-      QSeat user = getSeatInfo(handle);
+      SeatInfo user = _htUsers.get(handle.getKey());
       if (user == null) {
         if (!isFull()) {
           for (int i = 0; i < ROOM_CAPACITY; i++) {
@@ -190,13 +190,13 @@ public class RoomDelegate extends AbstractRoomDelegate {
   }
 
   /** @param user */
-  protected void takeSeat(QSeat user) {
-    _users[user.getSeatID()] = (SeatInfo) user;
+  protected void takeSeat(SeatInfo user) {
+    _users[user.getSeatID()] = user;
     super.takeSeat(user);
   }
 
   /** @param user */
-  protected void leaveSeat(QSeat user) {
+  protected void leaveSeat(SeatInfo user) {
     _users[user.getSeatID()] = null;
     super.leaveSeat(user);
   }
