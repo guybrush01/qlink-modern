@@ -82,9 +82,9 @@ public class ConnectionPool {
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
         hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
-        // Use Google driver if configured
+        // Explicitly set driver class if configured (normally auto-detected from JDBC URL)
         if (config.getBoolean("qlink.db.use_google_driver", false)) {
-            hikariConfig.setDriverClassName("com.mysql.jdbc.GoogleDriver");
+            hikariConfig.setDriverClassName("com.mysql.cj.jdbc.Driver");
         }
 
         _dataSource = new HikariDataSource(hikariConfig);

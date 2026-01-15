@@ -7,8 +7,9 @@
 *.d64
 *.iws
 
-.idea/workspace.xml
-.idea/tasks.xml
+# IntelliJ IDEA
+.idea/
+!.idea/runConfigurations/
 
 dependency-reduced-pom.xml
 
@@ -36,3 +37,10 @@ local.properties
 
 # Logfiles
 qlink.log.*
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Temp files
+tmpclaude-*
+nul
