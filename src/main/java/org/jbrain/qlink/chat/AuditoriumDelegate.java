@@ -23,11 +23,12 @@ Created on Jul 28, 2005
 */
 package org.jbrain.qlink.chat;
 
-import java.sql.*;
+import java.sql.SQLException;
 import java.util.*;
 
 import org.apache.log4j.Logger;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.AuditoriumDAO;
+import org.jbrain.qlink.db.entity.AuditoriumTalk;
 import org.jbrain.qlink.text.TextFormatter;
 import org.jbrain.qlink.user.QHandle;
 
@@ -72,32 +73,19 @@ class AuditoriumDelegate extends RoomDelegate {
     }
 //
     public void run() {
-      Connection conn = null;
-      PreparedStatement stmt = null;
-      ResultSet rs = null;
-
       try {
-        conn = DBUtils.getConnection();
-        stmt = conn.prepareStatement(
-                "SELECT delay,text from auditorium_talk WHERE mnemonic LIKE ? order by sort_order");
-        stmt.setString(1, _sKey);
-        _log.debug("Reading auditorium text key" + _sKey);
-        rs =
-            stmt.executeQuery();
-        while (rs.next()) {
-          output(_qlink, rs.getString("text"));
+        _log.debug("Reading auditorium text key " + _sKey);
+        List<AuditoriumTalk> talks = AuditoriumDAO.getInstance().findByMnemonicPattern(_sKey);
+        for (AuditoriumTalk talk : talks) {
+          output(_qlink, talk.getText());
           try {
-            Thread.sleep(rs.getInt("delay") * 1000);
+            Thread.sleep(talk.getDelay() * 1000);
           } catch (InterruptedException e) {
             _log.debug("AutoText timer was interrupted");
           }
         }
       } catch (SQLException e) {
         _log.error("SQL Exception", e);
-      } finally {
-        DBUtils.close(rs);
-        DBUtils.close(stmt);
-        DBUtils.close(conn);
       }
     }
   }
@@ -275,28 +263,17 @@ class AuditoriumDelegate extends RoomDelegate {
 
   public String getInfo() {
     // we'll grab the speaker information here.
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
     StringBuffer sb = new StringBuffer();
 
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
       _log.debug("Reading auditorium text");
-      rs =
-          stmt.executeQuery(
-              "SELECT text from auditorium_text WHERE start_date<now() AND end_date>now()");
-      while (rs.next()) {
-        sb.append(rs.getString("text"));
+      List<String> texts = AuditoriumDAO.getInstance().getCurrentAuditoriumText();
+      for (String text : texts) {
+        sb.append(text);
         sb.append("\n");
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return sb.toString();
   }

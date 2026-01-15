@@ -142,4 +142,18 @@ public class AuditoriumDAO extends BaseDAO {
     public int deleteByMnemonic(String mnemonic) throws SQLException {
         return executeUpdate("DELETE FROM auditorium_talk WHERE mnemonic = ?", mnemonic);
     }
+
+    /**
+     * Gets current auditorium text (where current time is between start_date and end_date).
+     */
+    public List<String> getCurrentAuditoriumText() throws SQLException {
+        return queryForList(
+            "SELECT text FROM auditorium_text WHERE start_date < NOW() AND end_date > NOW()",
+            new ResultSetMapper<String>() {
+                public String map(ResultSet rs) throws SQLException {
+                    return rs.getString("text");
+                }
+            }
+        );
+    }
 }

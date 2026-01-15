@@ -23,10 +23,7 @@ Created on Oct 21, 2005
 */
 package org.jbrain.qlink.extensions;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -40,7 +37,7 @@ import org.jbrain.qlink.chat.RoomManager;
 import org.jbrain.qlink.chat.RoomManagerEvent;
 import org.jbrain.qlink.chat.RoomManagerEventListener;
 import org.jbrain.qlink.chat.SystemMessageEvent;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.RoomLogDAO;
 
 public class RoomAuditor {
   protected static RoomEventListener _roomEventListener =
@@ -118,28 +115,10 @@ public class RoomAuditor {
 
   private static void audit(
       String room, boolean bPublic, int seat, String name, String action, String text) {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    String sql;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("INSERT INTO room_log " +
-              "(room, public_ind, seat, handle, action, text, timestamp) " +
-              "VALUES (?, ?, ?, ?, ?, ?, now())");
-      stmt.setString(1, room);
-      stmt.setString(2, (bPublic ? "Y" : "N"));
-      stmt.setInt(3, seat);
-      stmt.setString(4, name);
-      stmt.setString(5, action);
-      stmt.setString(6, text);
-      stmt.execute();
+      RoomLogDAO.getInstance().logEvent(room, bPublic, seat, name, action, text);
     } catch (SQLException e) {
-      // ignore error
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 }
