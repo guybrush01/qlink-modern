@@ -31,6 +31,8 @@ public class QFile {
     private String filetype;
     private String description;
     private byte[] data;
+    private int downloads;
+    private int dataLength;
 
     public QFile() {
     }
@@ -81,5 +83,21 @@ public class QFile {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    public int getDownloads() {
+        return downloads;
+    }
+
+    public void setDownloads(int downloads) {
+        this.downloads = downloads;
+    }
+
+    public int getDataLength() {
+        return dataLength;
+    }
+
+    public void setDataLength(int dataLength) {
+        this.dataLength = dataLength;
     }
 }

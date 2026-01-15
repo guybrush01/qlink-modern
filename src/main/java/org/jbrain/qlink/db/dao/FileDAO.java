@@ -253,4 +253,27 @@ public class FileDAO extends BaseDAO {
             referenceId
         );
     }
+
+    /**
+     * Finds a file by reference ID with download info (including data length but not the blob).
+     */
+    public QFile findForDownload(int referenceId) throws SQLException {
+        return queryForObject(
+            "SELECT file_id, reference_id, name, filetype, description, downloads, LENGTH(data) as data_length FROM files WHERE reference_id = ?",
+            new ResultSetMapper<QFile>() {
+                public QFile map(ResultSet rs) throws SQLException {
+                    QFile file = new QFile();
+                    file.setFileId(rs.getInt("file_id"));
+                    file.setReferenceId(rs.getInt("reference_id"));
+                    file.setName(rs.getString("name"));
+                    file.setFiletype(rs.getString("filetype"));
+                    file.setDescription(rs.getString("description"));
+                    file.setDownloads(rs.getInt("downloads"));
+                    file.setDataLength(rs.getInt("data_length"));
+                    return file;
+                }
+            },
+            referenceId
+        );
+    }
 }

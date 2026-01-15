@@ -195,4 +195,106 @@ public class MessageDAO extends BaseDAO {
             baseId, sinceDate
         );
     }
+
+    /**
+     * Finds a single message by reference ID.
+     */
+    public Message findOneByReferenceId(int referenceId) throws SQLException {
+        return queryForObject(
+            "SELECT * FROM messages WHERE reference_id = ?",
+            MESSAGE_MAPPER,
+            referenceId
+        );
+    }
+
+    /**
+     * Finds the reference ID of the next reply after the given message ID.
+     * @return the reference_id of the next reply, or 0 if none found
+     */
+    public int findNextReplyReferenceId(int messageId, int parentId) throws SQLException {
+        Integer result = queryForObject(
+            "SELECT reference_id FROM messages WHERE message_id > ? AND parent_id = ? LIMIT 1",
+            new ResultSetMapper<Integer>() {
+                public Integer map(ResultSet rs) throws SQLException {
+                    return rs.getInt("reference_id");
+                }
+            },
+            messageId, parentId
+        );
+        return result != null ? result : 0;
+    }
+
+    /**
+     * Finds the reference ID of the previous reply before the given message ID.
+     * @return the reference_id of the previous reply, or 0 if none found
+     */
+    public int findPreviousReplyReferenceId(int messageId, int parentId) throws SQLException {
+        Integer result = queryForObject(
+            "SELECT reference_id FROM messages WHERE message_id < ? AND parent_id = ? ORDER BY message_id DESC LIMIT 1",
+            new ResultSetMapper<Integer>() {
+                public Integer map(ResultSet rs) throws SQLException {
+                    return rs.getInt("reference_id");
+                }
+            },
+            messageId, parentId
+        );
+        return result != null ? result : 0;
+    }
+
+    /**
+     * Finds messages by base ID ordered by message_id.
+     */
+    public List<Message> findByBaseIdOrderedByMessageId(int baseId) throws SQLException {
+        return queryForList(
+            "SELECT * FROM messages WHERE base_id = ? ORDER BY message_id",
+            MESSAGE_MAPPER,
+            baseId
+        );
+    }
+
+    /**
+     * Searches messages by base ID with title/text filter, ordered by message_id.
+     */
+    public List<Message> searchByBaseId(int baseId, String searchTerm) throws SQLException {
+        String pattern = "%" + searchTerm + "%";
+        return queryForList(
+            "SELECT * FROM messages WHERE base_id = ? AND (title LIKE ? OR text LIKE ?) ORDER BY message_id",
+            MESSAGE_MAPPER,
+            baseId, pattern, pattern
+        );
+    }
+
+    /**
+     * Finds the reference ID of the first reply after a given message ID and date.
+     * @return the reference_id of the next reply, or 0 if none found
+     */
+    public int findNextReplyAfterDate(int parentId, int afterMessageId, String dateStr) throws SQLException {
+        Integer result = queryForObject(
+            "SELECT reference_id FROM messages WHERE parent_id = ? AND message_id > ? AND date > ? LIMIT 1",
+            new ResultSetMapper<Integer>() {
+                public Integer map(ResultSet rs) throws SQLException {
+                    return rs.getInt("reference_id");
+                }
+            },
+            parentId, afterMessageId, dateStr
+        );
+        return result != null ? result : 0;
+    }
+
+    /**
+     * Finds the reference ID of the first reply to a parent message.
+     * @return the reference_id of the first reply, or 0 if none found
+     */
+    public int findFirstReplyReferenceId(int parentId) throws SQLException {
+        Integer result = queryForObject(
+            "SELECT reference_id FROM messages WHERE parent_id = ? LIMIT 1",
+            new ResultSetMapper<Integer>() {
+                public Integer map(ResultSet rs) throws SQLException {
+                    return rs.getInt("reference_id");
+                }
+            },
+            parentId
+        );
+        return result != null ? result : 0;
+    }
 }

@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.jbrain.qlink.db.BaseDAO;
 import org.jbrain.qlink.db.entity.EntryType;
+import org.jbrain.qlink.db.entity.MenuItemEntry;
 import org.jbrain.qlink.db.entity.TableOfContents;
 
 /**
@@ -226,5 +227,27 @@ public class TocDAO extends BaseDAO {
      */
     public boolean entryTypeExists(int referenceId) throws SQLException {
         return exists("SELECT 1 FROM entry_types WHERE reference_id = ?", referenceId);
+    }
+
+    /**
+     * Finds menu items by menu ID (joins toc and entry_types tables).
+     */
+    public List<MenuItemEntry> findMenuItems(int menuId) throws SQLException {
+        return queryForList(
+            "SELECT toc.reference_id, toc.title, entry_types.entry_type, entry_types.cost " +
+            "FROM toc, entry_types WHERE toc.reference_id = entry_types.reference_id " +
+            "AND toc.menu_id = ? AND toc.active = 'Y' ORDER BY toc.sort_order",
+            new ResultSetMapper<MenuItemEntry>() {
+                public MenuItemEntry map(ResultSet rs) throws SQLException {
+                    MenuItemEntry item = new MenuItemEntry();
+                    item.setReferenceId(rs.getInt("reference_id"));
+                    item.setTitle(rs.getString("title"));
+                    item.setEntryType(rs.getInt("entry_type"));
+                    item.setCost(rs.getString("cost"));
+                    return item;
+                }
+            },
+            menuId
+        );
     }
 }

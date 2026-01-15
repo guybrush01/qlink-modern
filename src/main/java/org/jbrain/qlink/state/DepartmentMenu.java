@@ -43,6 +43,19 @@ import java.util.*;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.dao.ArticleDAO;
+import org.jbrain.qlink.db.dao.FileDAO;
+import org.jbrain.qlink.db.dao.MessageDAO;
+import org.jbrain.qlink.db.entity.Message;
+import org.jbrain.qlink.db.entity.QFile;
+import org.jbrain.qlink.db.dao.GatewayDAO;
+import org.jbrain.qlink.db.dao.ReferenceHandlerDAO;
+import org.jbrain.qlink.db.dao.TocDAO;
+import org.jbrain.qlink.db.dao.VendorRoomDAO;
+import org.jbrain.qlink.db.entity.Article;
+import org.jbrain.qlink.db.entity.EntryType;
+import org.jbrain.qlink.db.entity.Gateway;
+import org.jbrain.qlink.db.entity.MenuItemEntry;
 
 import org.jbrain.qlink.user.QHandle;
 
@@ -111,8 +124,8 @@ public class DepartmentMenu extends AbstractMenuState {
 			int index=((ListSearch)a).getIndex();
 			_log.debug("Received Search request with ID=" + id + " and index=" + index);
 			//int bid=((MenuEntry)_alMenu.get(((ListSearch)a).getIndex())).getID();
-			String q=((ListSearch)a).getQuery().replaceAll("'","''");
-			selectMessageList(id,"AND (title LIKE '%" + q + "%' OR text LIKE '%" + q + "%')");
+			String q=((ListSearch)a).getQuery();
+			selectMessageList(id, q);
 			clearLineCount();
 			sendMessageList();
     } else if (a instanceof GetSerial) {//KT  SKERN
@@ -165,7 +178,7 @@ public class DepartmentMenu extends AbstractMenuState {
     } else if (a instanceof SelectList) {//K3 SKERN Also used to list files in a file area
            rc = true;
            int id = ((SelectList) a).getID();
-           selectMessageList(id, "");
+           selectMessageList(id, null);
            clearLineCount();
            sendMessageList();
     } else if (a instanceof GetMenuInfo) {
@@ -209,25 +222,11 @@ public class DepartmentMenu extends AbstractMenuState {
 
   /** @param id */
   private void setCount(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-   
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("update files set downloads=downloads+1 where reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("add cont " + id + " of download");
-    
-      stmt.execute ();
-      
+      FileDAO.getInstance().incrementDownloads(id);
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-
-      // TODO What should we do if we do not find anything?
-    } finally {
-     
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
@@ -235,47 +234,28 @@ public class DepartmentMenu extends AbstractMenuState {
 
   /** @param id */
   private void openStream(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT name, filetype, downloads, LENGTH(data) as length, data from files where reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("Selecting file " + id + " for download");
-      rs =
-          stmt.executeQuery();
-      if (rs.next()) {
-        // get our File length.
-        int mid = rs.getInt("length");
-        _log.debug("file lenght " + mid + " for download");
-        count = rs.getInt("downloads");
-        _log.debug("file count " + count );
-         // get our File name.
-        String name = rs.getString("name");
+      QFile file = FileDAO.getInstance().findForDownload(id);
+      if (file != null) {
+        int mid = file.getDataLength();
+        _log.debug("file length " + mid + " for download");
+        count = file.getDownloads();
+        _log.debug("file count " + count);
+        String name = file.getName();
         _log.debug("file name " + name + " for download");
-              
-        String type = rs.getString("filetype");
-        // get binary stream
-        _log.debug("file type " + type + " for download");        
-        _is = new EscapedInputStream(rs.getBinaryStream("data"));
-        DBUtils.close(rs);
-       
-        _session.send(new InitDownload(mid, type));
-      } else {
-		  
-        // TODO What should we do if we do not find anything?  SKERN
-            
+        String type = file.getFiletype();
+        _log.debug("file type " + type + " for download");
+
+        // Get the file data and wrap in EscapedInputStream
+        byte[] data = FileDAO.getInstance().getFileData(id);
+        if (data != null) {
+          _is = new EscapedInputStream(new java.io.ByteArrayInputStream(data));
+          _session.send(new InitDownload(mid, type));
+        }
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-
-      // TODO What should we do if we do not find anything?
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
@@ -285,73 +265,42 @@ public class DepartmentMenu extends AbstractMenuState {
    * @return
    */
   private int selectDatedReply(int id, Date date) {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT message_id, parent_id from messages where reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("Searching for reply after " + date);
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        // get our message ID.
-        int mid = rs.getInt("message_id");
-        // this should be the same as _iParentID, but to be sure.
-        int pid = rs.getInt("parent_id");
+      Message message = MessageDAO.getInstance().findOneByReferenceId(id);
+      if (message != null) {
+        int mid = message.getMessageId();
+        int pid = message.getParentId();
         if (pid != _iCurrParentID)
           _log.error(
                   MessageFormat.format("Select Dated Reply id {0} has parent={1}, but current ParentID value={2}", id, pid, _iCurrParentID));
-        DBUtils.close(rs);
         SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-        // now, look for new replies.
-        stmt = conn.prepareStatement("SELECT reference_id from messages where parent_id = ? AND message_id > ? AND date > ? LIMIT 1");
-        stmt.setInt(1, pid);
-        stmt.setInt(2, mid);
-        stmt.setString(3,sdf.format(date));
-        rs = stmt.executeQuery();
-        if (rs.next()) {
-          id = rs.getInt("reference_id");
+        int nextId = MessageDAO.getInstance().findNextReplyAfterDate(pid, mid, sdf.format(date));
+        if (nextId != 0) {
+          id = nextId;
         } else {
           _log.error("We did not find any replies after this date");
-          // TODO What should we do if we do not find anything?
           _session.send(new SendSYSOLM("File not found press F5"));
         }
       } else {
         _log.error("Reply Dated search did not locate reply.");
-        // TODO What should we do if we do not find anything?
         _session.send(new SendSYSOLM("File not found press F5"));
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // TODO What should we do if we do not find anything?
       _session.send(new SendSYSOLM("File not found press F5"));
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return id;
   }
 
   private void selectItem(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT entry_type, cost, special FROM entry_types WHERE reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("Selecting Item: " + id);
-      rs =
-          stmt.executeQuery();
-      if (rs.next()) {
-        int type = rs.getInt("entry_type");
-        String cost = rs.getString("cost");
-        if (rs.getString("special").equalsIgnoreCase("Y") && setHandler(id)) {
-          return;//internal commands strucktur
+      EntryType entry = TocDAO.getInstance().findEntryTypeByReferenceId(id);
+      if (entry != null) {
+        int type = entry.getEntryType();
+        if (entry.isSpecial() && setHandler(id)) {
+          return; // internal commands structure
         } else {
           switch (type) {
             case MenuItem.MENU:
@@ -368,10 +317,9 @@ public class DepartmentMenu extends AbstractMenuState {
               _log.debug("Item is a Text, display it");
               displayDBTextFile(id);
               break;
-            case MenuItem.FILE_DESC://SKERN
+            case MenuItem.FILE_DESC:
               _log.debug("Item is a Multi Text, with comment display it");
-              displayDBFileText(id);//
-              
+              displayDBFileText(id);
               break;
             case MenuItem.DOWNLOAD:
               _log.debug("Item is a download, display text");
@@ -385,71 +333,46 @@ public class DepartmentMenu extends AbstractMenuState {
               _log.debug("Item is a chat room, enter it");
               enterChat(id);
               break;
-            case MenuItem.BROWSE://SKERN
+            case MenuItem.BROWSE:
               _log.debug("Item is a search item, do it");
               displayDBTextFile(id);
-              break; 
-            case MenuItem.SERIAL://SKERN
+              break;
+            case MenuItem.SERIAL:
               _log.debug("Item is a search serial item, do it");
               displayFileInfo(id);
-              break; 
-			case MenuItem.ONEMOMENT://SKERN
+              break;
+            case MenuItem.ONEMOMENT:
               _log.debug("Item is a ONEMOMENT");
-             displayDBTextFile(id);
-              break; 
+              displayDBTextFile(id);
+              break;
             default:
               _log.error("Item has unknown type (" + type + "), what should we do?");
-              _session.send(new SendSYSOLM("Type ("+ type + ") not found press F5"));//SKERN
-              
-      // _session.send(new LostConnection());
+              _session.send(new SendSYSOLM("Type (" + type + ") not found press F5"));
               break;
           }
         }
       } else {
         _log.error("Item has no reference, what should we do?");
-       
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-     
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
   /** @param id */
   private void enterChat(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    String room;
-    int port;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT room from vendor_rooms where reference_id=?");
-      stmt.setInt(1, id);
-      _log.debug("Get room information for  Chat ID: " + id);
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        room = rs.getString("room");
+      _log.debug("Get room information for Chat ID: " + id);
+      String room = VendorRoomDAO.getInstance().getRoomName(id);
+      if (room != null) {
         QState state = new SimpleChat(_session, room);
         state.activate();
       } else {
         _log.debug("Vendor room record does not exist.");
-        // TODO need to handle this.
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // TODO do something better than this.
       _session.terminate();
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
@@ -458,21 +381,12 @@ public class DepartmentMenu extends AbstractMenuState {
    * @throws IOException
    */
   protected void connectToGateway(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    String address;
-    int port;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT address,port from gateways where gateway_id=?");
-      stmt.setInt(1, id);
-      _log.debug("Get file information for  Gateway ID: " + id);
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        address = rs.getString("address");
-        port = rs.getInt("port");
+      _log.debug("Get gateway information for Gateway ID: " + id);
+      Gateway gateway = GatewayDAO.getInstance().findById(id);
+      if (gateway != null) {
+        String address = gateway.getAddress();
+        int port = gateway.getPort();
         if (address == null || address.equals("")) {
           _log.debug("Gateway address is null or empty.");
           _session.send(new GatewayExit("Destination invalid"));
@@ -488,28 +402,17 @@ public class DepartmentMenu extends AbstractMenuState {
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
       _session.send(new GatewayExit("Server error"));
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
   /** @param id */
   private boolean setHandler(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
     QState state = null;
 
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT handler FROM reference_handlers WHERE reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("Selecting Special item: " + id);
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        String clazz = rs.getString("handler");
+      String clazz = ReferenceHandlerDAO.getInstance().findHandlerByReferenceId(id);
+      if (clazz != null) {
         _log.debug("Found Handler: " + clazz);
         try {
           Class c = Class.forName(clazz);
@@ -531,12 +434,6 @@ public class DepartmentMenu extends AbstractMenuState {
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-     
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
     return false;
   }
@@ -545,131 +442,92 @@ public class DepartmentMenu extends AbstractMenuState {
   private String pad = "                 ";
 
   private void displayFileInfo(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-   
-    String name;
     String filename = "";
-    String type;
     Date date;
     String author;
-  
+
     /*
      * We may want to move the actual file description into a message, so the MessageID will be technically valid. ok
      */
-    _iCurrMessageID =
-        id; // not really, but in PostItem, if this is not set, if thinks it is a new posting, but
-            // it is really a reply
+    _iCurrMessageID = id; // not really, but in PostItem, if this is not set, it thinks it is a new posting, but it is really a reply
     _iNextMessageID = 0;
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT name, filetype, downloads, LENGTH(data) as length, data from files where reference_id=?");
-      stmt.setInt(1, id);
       _log.debug("Get file information for FileID: " + id);
-      rs =
-          stmt.executeQuery();
-      _log.debug("Get message information for baseID: " + id);        
-     
-      if (rs.next()) {	
-     
-             
-       _log.debug("rs ok " + id);
-                 	  
+      QFile file = FileDAO.getInstance().findForDownload(id);
+      _log.debug("Get message information for baseID: " + id);
+
+      if (file != null) {
+        _log.debug("file found " + id);
+
         TextFormatter tf = new TextFormatter(TextFormatter.FORMAT_NONE, 39);
-        type = rs.getString("filetype");
-        int downloads = rs.getInt("downloads");
-        name = rs.getString("name");// filename
+        String type = file.getFiletype();
+        int downloads = file.getDownloads();
+        String name = file.getName();
         name = name + "                ";
-       
-        for (int i = 0; i < 16; i++ ){
-        
-        filename = filename + name.charAt((i));
-        }
-        //add 16 shift space SKERN todo make 16 exect
-        int mid = (rs.getInt("length")/254)+1
-       ;
-        
-        _log.debug("filename " + filename + "type " + type + " Lengs " + mid );
 
-        stmt = conn.prepareStatement("SELECT title,  date, author, title, replies, text from messages WHERE reference_id=?");
-        stmt.setInt(1, id);
-        rs =
-            stmt.executeQuery();
-        if (rs.next()) {
-          String header =rs.getString("title");
-          date = rs.getDate("date");
-          author = rs.getString("author")+"          ";
-          String man="";
-     for (int i = 0; i < 10; i++ ){
-        
-        man = man + author.charAt((i));
+        for (int i = 0; i < 16; i++) {
+          filename = filename + name.charAt(i);
         }
-        
-        _log.debug("date" + date + "author " + author  );
-        tf.add("FILE: " + filename );
-        tf.add("FROM: " + man +" "+ date +"  S#: " + id);
-        tf.add("");
-        tf.add("SUBJECT: " + header);
-        tf.add("");
-        tf.add("TYPE:          " + type );
-        tf.add("BLOCKS:        " + mid );
-        tf.add("DOWNLOADS:     " + downloads);
-        int mil = mid*10;
-        int mih = mid*3;
+        int mid = (file.getDataLength() / 254) + 1;
 
-        String m1 = leftPad((mil % 3600) / 60,2);
-   
-      
-   
-        String sekunden1 = leftPad((mil % 3600) % 60,2);
-        
-        String minuten2 = leftPad((mih % 3600) / 60,2);
-        String sekunden2 =leftPad((mih % 3600) % 60,2);
-        
-        tf.add("EST. D/L TIME: 300:" + m1 + "/"+ sekunden1 + " 1200: " + minuten2 + "/" + sekunden2);
-        String text = rs.getString("text");// SKERN
-          String data="";
-         for (int i = 77; i < text.length(); i++) {
-      data = data + (text.charAt(i));
-      }
-        tf.add(data);
-        _log.debug("Filename:" + name );
-	}
-       // temp testing
-                stmt = conn.prepareStatement("SELECT reference_id FROM messages WHERE parent_id=? LIMIT 1");
-                stmt.setInt(1, id);
-	        	rs=stmt.executeQuery();
-	        	if(rs.next()) {
-	        		_iNextMessageID=rs.getInt("reference_id");
-	        	}
+        _log.debug("filename " + filename + " type " + type + " Length " + mid);
+
+        Message message = MessageDAO.getInstance().findOneByReferenceId(id);
+        if (message != null) {
+          String header = message.getTitle();
+          date = message.getDate();
+          author = message.getAuthor() + "          ";
+          String man = "";
+          for (int i = 0; i < 10; i++) {
+            man = man + author.charAt(i);
+          }
+
+          _log.debug("date " + date + " author " + author);
+          tf.add("FILE: " + filename);
+          tf.add("FROM: " + man + " " + date + "  S#: " + id);
+          tf.add("");
+          tf.add("SUBJECT: " + header);
+          tf.add("");
+          tf.add("TYPE:          " + type);
+          tf.add("BLOCKS:        " + mid);
+          tf.add("DOWNLOADS:     " + downloads);
+          int mil = mid * 10;
+          int mih = mid * 3;
+
+          String m1 = leftPad((mil % 3600) / 60, 2);
+          String sekunden1 = leftPad((mil % 3600) % 60, 2);
+          String minuten2 = leftPad((mih % 3600) / 60, 2);
+          String sekunden2 = leftPad((mih % 3600) % 60, 2);
+
+          tf.add("EST. D/L TIME: 300:" + m1 + "/" + sekunden1 + " 1200: " + minuten2 + "/" + sekunden2);
+          String text = message.getText();
+          String data = "";
+          if (text != null && text.length() > 77) {
+            for (int i = 77; i < text.length(); i++) {
+              data = data + (text.charAt(i));
+            }
+          }
+          tf.add(data);
+          _log.debug("Filename:" + name);
+        }
+
+        // Find first reply
+        _iNextMessageID = MessageDAO.getInstance().findFirstReplyReferenceId(id);
         _session.send(new InitDataSend(id, 0, 0, _iNextMessageID, 0));
-        
+
         tf.add("\n <<   PRESS F7 FOR DOWNLOAD MENU    >> ");
         _lText = tf.getList();
-        _log.error("tf "+ _lText);
-        
-        
+        _log.error("tf " + _lText);
+
         clearLineCount();
         sendSingleLines();
       } else {
         _log.error("Item has no reference, what should we do?");
-        
-        
         _session.send(new InitDataSend(id, 0, 0, _iNextMessageID, 0));
         _session.send(new FileText("Found no item. press F5 ", true));
       }
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-      
-    } finally {
-    
-    
-    
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
    /** @param n, lenght
@@ -686,10 +544,6 @@ public class DepartmentMenu extends AbstractMenuState {
   
   /** @param id */
   private void displayMessage(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    int next = 0;
     int mid;
     int pid = 0;
     int bid = 0;
@@ -699,75 +553,41 @@ public class DepartmentMenu extends AbstractMenuState {
     _iCurrMessageID = id;
     _iNextMessageID = 0;
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT base_id,parent_id, message_id,text FROM messages WHERE reference_id=?");
-      stmt.setInt(1, id);
-      _log.debug("Querying for message "+ id);
+      _log.debug("Querying for message " + id);
       String text;
-      String test="";
-      String data="";
-      rs =
-          stmt.executeQuery();
-      if (rs.next()) {
-        text = rs.getString("text");
-       // text="SUBJ: ....."; 
-        bid = rs.getInt("base_id");
-        mid = rs.getInt("message_id");
-        pid = rs.getInt("parent_id");
+      Message message = MessageDAO.getInstance().findOneByReferenceId(id);
+      if (message != null) {
+        text = message.getText();
+        bid = message.getBaseId();
+        mid = message.getMessageId();
+        pid = message.getParentId();
 
-         for (int j = 0; j < 4; j++) {   
-      test = test + (text.charAt(j));
-     }
-     
-     // _log.debug("Test string: " + test +" text "+text);
+        String test = "";
+        if (text != null && text.length() >= 4) {
+          test = text.substring(0, 4);
+        }
+
         _iCurrParentID = pid;
         // are we a main message?
         if (pid == 0) pid = id;
-        DBUtils.close(rs);
         // are there any replies to either this message or it's parent?
-        stmt = conn.prepareStatement("SELECT reference_id FROM messages WHERE message_id>? AND parent_id=? LIMIT 1");
-        stmt.setInt(1, mid);
-        stmt.setInt(2, pid);
-        rs = stmt.executeQuery();
-        if (rs.next()) {
-          _iNextMessageID = rs.getInt("reference_id");
-   
-        }
-       _log.debug("Message ID: " + id + " has next message ID: " + _iNextMessageID+" test"+test+"ende");
-        if(test.equals("FILE"))
-         {//the first 4 carracter = FILE  //SKERN
+        _iNextMessageID = MessageDAO.getInstance().findNextReplyReferenceId(mid, pid);
+
+        _log.debug("Message ID: " + id + " has next message ID: " + _iNextMessageID + " test" + test + "ende");
+        if (test.equals("FILE")) {
+          // the first 4 characters = FILE
           // only do this if it is a file comment.
-          _iCurrMessageID = id; 
-           
-            _iNextMessageID = 0;
-    try {
-      _log.debug("Get file information for FileID: " + id);
-      displayFileInfo(id);
-   
-      // big time error, send back error string and close connection
-      
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
-    }
-       DBUtils.close(rs);
-        stmt = conn.prepareStatement("SELECT reference_id FROM messages WHERE message_id<? AND parent_id=? ORDER BY message_id DESC LIMIT 1");
-        stmt.setInt(1, mid);
-        stmt.setInt(2, pid);
-          rs =
-              stmt.executeQuery();
-          if (rs.next()) {
-            prev = rs.getInt("reference_id");
-            _log.debug("File Message ID: " + id + " has previous message ID: " + prev);
-            
-          }
+          _iCurrMessageID = id;
+          _iNextMessageID = 0;
+          _log.debug("Get file information for FileID: " + id);
+          displayFileInfo(id);
+          prev = MessageDAO.getInstance().findPreviousReplyReferenceId(mid, pid);
+          _log.debug("File Message ID: " + id + " has previous message ID: " + prev);
         }
       } else {
         _log.error("Message ID invalid.");
         text = "Message Not Found";
       }
-      DBUtils.close(rs);
       // init data area
       if (bid == pid) {
         // we are a file comment, as they have board ID same as parent id.
@@ -781,12 +601,6 @@ public class DepartmentMenu extends AbstractMenuState {
       sendSingleLines();
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-    
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
   //SKERN ----------------------------------------------------------------
@@ -794,74 +608,50 @@ public class DepartmentMenu extends AbstractMenuState {
    * @param id
    */
   private void displayDBFileText(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    boolean bData = false;
-     int num = 0;
-	MessageEntry m;
- String author = null;
-    String title = null;
-    String text = null;
-    Date date = null;
- 
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT reference_id,parent_id, title,author, date,replies from messages WHERE " +
-              "base_id=? order by message_id");
       _log.debug("Querying for filetext file");
       String data;
-      int pid = 0, bid=0, prev = 0, replies = 0, mid = 0;
-      stmt.setInt(1, id);
-      rs =
-          stmt.executeQuery();
-        if (rs.next()) {
-			 bid = id;
-			  replies = rs.getInt("replies");
-             pid = rs.getInt("parent_id");
-			id = rs.getInt("reference_id");
-       prev = rs.getInt("reference_id");
-         if (replies>=1) {
-        
-        _session.send(new InitDataSend(id, prev, pid));
-      } else {
-        _session.send(new InitDataSend(id, 0, 0, pid, 0));
+      int pid = 0, prev = 0, replies = 0;
+
+      java.util.List<Message> messages = MessageDAO.getInstance().findByBaseIdOrderedByMessageId(id);
+      if (!messages.isEmpty()) {
+        Message firstMessage = messages.get(0);
+        replies = firstMessage.getReplies();
+        pid = firstMessage.getParentId();
+        id = firstMessage.getReferenceId();
+        prev = firstMessage.getReferenceId();
+        if (replies >= 1) {
+          _session.send(new InitDataSend(id, prev, pid));
+        } else {
+          _session.send(new InitDataSend(id, 0, 0, pid, 0));
+        }
       }
-	}
-      int  next = 0;
-      stmt = conn.prepareStatement("SELECT next_id,prev_id,data FROM articles WHERE article_id=?");
-      stmt.setInt(1, id);
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        prev = rs.getInt("prev_id");
-        next = rs.getInt("next_id");
-        data = rs.getString("data");
-        
-        _log.debug("File Message ID: " + id + " has previous message ID: " + prev +" has next message ID: " + next);
+
+      int next = 0;
+      Article article = ArticleDAO.getInstance().findById(id);
+      if (article != null) {
+        prev = article.getPrevId();
+        next = article.getNextId();
+        data = article.getData();
+        _log.debug("File Message ID: " + id + " has previous message ID: " + prev + " has next message ID: " + next);
       } else {
         _log.error("Article ID invalid.");
-        data = "File Not Found";   
+        data = "File Not Found";
       }
-      DBUtils.close(rs);
+
       // init data area
-     _session.send(new InitDataSend(id, prev, next));
+      _session.send(new InitDataSend(id, prev, next));
       TextFormatter tf = new TextFormatter(TextFormatter.FORMAT_NONE, 39);
       tf.add(data);
       tf.add("\n  <PRESS F7 AND SELECT >\n\n             <\"GET NEXT ITEM/COMMENT\">");
-     
+
       _lText = tf.getList();
       clearLineCount();
       sendSingleLines();
-       
+
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-     
       _session.terminate();
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 //-------------------------------------------------------------------------------------
@@ -869,28 +659,19 @@ public class DepartmentMenu extends AbstractMenuState {
    * @param id
    */
   private void displayDBTextFile(int id) throws IOException {
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    boolean bData = false;
-
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT next_id,prev_id,data FROM articles WHERE article_id=?");
-      stmt.setInt(1, id);
       _log.debug("Querying for file text file");
       String data;
       int prev = 0, next = 0;
-      rs = stmt.executeQuery();
-      if (rs.next()) {
-        prev = rs.getInt("prev_id");
-        next = rs.getInt("next_id");
-        data = rs.getString("data");
+      Article article = ArticleDAO.getInstance().findById(id);
+      if (article != null) {
+        prev = article.getPrevId();
+        next = article.getNextId();
+        data = article.getData();
       } else {
         _log.error("Article ID invalid.");
-        data = "File Not Found";   
+        data = "File Not Found";
       }
-      DBUtils.close(rs);
       // init data area
       _session.send(new InitDataSend(id, prev, next));
       TextFormatter tf = new TextFormatter(TextFormatter.FORMAT_NONE, 39);
@@ -900,112 +681,65 @@ public class DepartmentMenu extends AbstractMenuState {
       _lText = tf.getList();
       clearLineCount();
       sendSingleLines();
-       //wat is to do if multitext
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-     
       _session.terminate();
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
   /** @throws IOException */
   private void selectMenu(int id) throws IOException {
-    boolean rc = false;
-    Connection conn = null;
-    PreparedStatement stmt = null;
-    ResultSet rs = null;
-    boolean bData = false;
-    int type = 0;
-    String cost;
-    int refid;
-    String title;
-    int iCost = MenuItem.COST_NORMAL;
-    MenuEntry m;
-
     _alMenu.clear();
     _iCurrMenuID = id;
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.prepareStatement("SELECT toc.reference_id,toc.title,entry_types.entry_type,entry_types.cost " +
-              "FROM toc,entry_types WHERE toc.reference_id=entry_types.reference_id and toc.menu_id=? AND toc.active='Y' " +
-              "ORDER by toc.sort_order");
-      stmt.setInt(1, id);
       _log.debug("Querying for menu");
-      rs =
-          stmt.executeQuery();
-      while (rs.next()) {
-        bData = true;
-        type = rs.getInt("entry_types.entry_type");
-        cost = rs.getString("entry_types.cost");
-        refid = rs.getInt("toc.reference_id");
-        title = rs.getString("toc.title");
+      java.util.List<MenuItemEntry> items = TocDAO.getInstance().findMenuItems(id);
+      for (MenuItemEntry item : items) {
+        int type = item.getEntryType();
+        String cost = item.getCost();
+        int refid = item.getReferenceId();
+        String title = item.getTitle();
+        int iCost = MenuItem.COST_NORMAL;
+
         if (type != MenuItem.HEADING) title = "    " + title;
-        if (cost.equals("PREMIUM")) {
+        if (cost != null && cost.equals("PREMIUM")) {
           title = title + " (+)";
           iCost = MenuItem.COST_PREMIUM;
-        } else if (cost.equals("NOCHARGE")) {
+        } else if (cost != null && cost.equals("NOCHARGE")) {
           iCost = MenuItem.COST_NO_CHARGE;
         }
         _alMenu.add(new MenuEntry(refid, title, type, iCost));
       }
-      DBUtils.close(rs);
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-      // big time error, send back error string and close connection
-  
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
-  private void selectMessageList(int id, String query) {
-    Connection conn = null;
-    Statement stmt = null;
-    ResultSet rs = null;
+  private void selectMessageList(int id, String searchTerm) {
     int num = 0;
     MessageEntry m;
 
-    int prev = 0;
-    int next = 0;
-    int mid = 0;
-    int pid;
-    String author = null;
-    String title = null;
-    String text = null;
-    Date date = null;
-    int replies = 0;
-
     clearMessageList();
     try {
-      conn = DBUtils.getConnection();
-      stmt = conn.createStatement();
       _log.debug("Selecting message list for message base " + id);
-      rs =
-          stmt.executeQuery(
-              "SELECT reference_id,parent_id, title,author, date,replies from messages WHERE base_id="
-                  + id
-                  + " "
-                  + query
-                  + " order by message_id");
-      while (rs.next()) {
-        pid = rs.getInt("parent_id");
-        mid = rs.getInt("reference_id");
+      java.util.List<Message> messages;
+      if (searchTerm != null && !searchTerm.isEmpty()) {
+        messages = MessageDAO.getInstance().searchByBaseId(id, searchTerm);
+      } else {
+        messages = MessageDAO.getInstance().findByBaseIdOrderedByMessageId(id);
+      }
+
+      for (Message msg : messages) {
+        int pid = msg.getParentId();
+        int mid = msg.getReferenceId();
         if (pid != 0) {
           m = (MessageEntry) _hmMessages.get(new Integer(pid));
           if (m != null) m.addReplyID(mid);
           else _log.error("Reference ID: " + mid + "is an orphan?");
-
         } else {
-          title = rs.getString("title");
-          author = rs.getString("author");
-          date = rs.getDate("date");
+          String title = msg.getTitle();
+          String author = msg.getAuthor();
+          Date date = msg.getDate();
           m = new MessageEntry(mid, title, author, date);
           _alMessages.add(m);
           _hmMessages.put(new Integer(mid), m);
@@ -1013,13 +747,9 @@ public class DepartmentMenu extends AbstractMenuState {
         }
       }
       _log.debug(num + " message found in message base");
-      
+
     } catch (SQLException e) {
       _log.error("SQL Exception", e);
-    } finally {
-      DBUtils.close(rs);
-      DBUtils.close(stmt);
-      DBUtils.close(conn);
     }
   }
 
