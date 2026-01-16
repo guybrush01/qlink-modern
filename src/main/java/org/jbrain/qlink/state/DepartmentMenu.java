@@ -733,7 +733,7 @@ public class DepartmentMenu extends AbstractMenuState {
         int pid = msg.getParentId();
         int mid = msg.getReferenceId();
         if (pid != 0) {
-          m = (MessageEntry) _hmMessages.get(new Integer(pid));
+          m = _hmMessages.get(pid);
           if (m != null) m.addReplyID(mid);
           else _log.error("Reference ID: " + mid + "is an orphan?");
         } else {
@@ -742,7 +742,7 @@ public class DepartmentMenu extends AbstractMenuState {
           Date date = msg.getDate();
           m = new MessageEntry(mid, title, author, date);
           _alMessages.add(m);
-          _hmMessages.put(new Integer(mid), m);
+          _hmMessages.put(mid, m);
           num++;
         }
       }

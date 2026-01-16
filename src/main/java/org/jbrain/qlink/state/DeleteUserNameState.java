@@ -143,7 +143,7 @@ public class DeleteUserNameState extends AbstractState {
       _iSelectedID = ((SelectMenuItem) a).getID() - DepartmentMenu.RESERVED_MENU_REF_ID_MIN;
       _log.debug("User selected item: " + _iSelectedID);
       if (_iSelectedID > -1 && _iSelectedID < _lAccounts.size()) {
-        if (_alDeleted.contains(new Integer(_iSelectedID))) {
+        if (_alDeleted.contains(_iSelectedID)) {
           _session.send(new InitDataSend(0, 0, 0));
           _session.send(
               new FileText(
@@ -165,7 +165,7 @@ public class DeleteUserNameState extends AbstractState {
       _session.send(new InitDataSend(0, 0, 0));
       try {
         info.delete();
-        _alDeleted.add(new Integer(_iSelectedID));
+        _alDeleted.add(_iSelectedID);
         _session.send(
             new FileText(
                 "User name '" + info.getHandle() + "' has been successfully removed.", false));

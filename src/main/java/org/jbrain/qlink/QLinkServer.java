@@ -152,12 +152,12 @@ public class QLinkServer {
   public Map<String, Object> getAttributes() {
     HashMap<String, Object> m = new HashMap<>();
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-    m.put("OpenSessions", new Integer(_vSessions.size()));
-    m.put("UsersLoggedIn", new Integer(_htSessions.size()));
+    m.put("OpenSessions", _vSessions.size());
+    m.put("UsersLoggedIn", _htSessions.size());
     m.put("ServerStarted", df.format(_started));
     m.put("NewestSession", df.format(_newest));
-    m.put("SessionCount", new Integer(_iSessionCount));
-    m.put("ErrorCount", new Integer(_iErrorCount));
+    m.put("SessionCount", _iSessionCount);
+    m.put("ErrorCount", _iErrorCount);
 
     return m;
   }

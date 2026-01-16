@@ -44,7 +44,7 @@ public class ChatProfile {
   }
 
   public void setEntry(String entry, int i) {
-    _hmNumeric.put(entry, new Integer(i));
+    _hmNumeric.put(entry, i);
   }
 
   public void setEntry(String entry, String str) {
