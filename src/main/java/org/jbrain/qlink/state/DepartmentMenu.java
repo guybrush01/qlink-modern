@@ -80,7 +80,7 @@ public class DepartmentMenu extends AbstractMenuState {
   protected int _iCurrMessageID;
   protected int _iNextMessageID;
   protected int _iCurrParentID;;
-  private List _lRefreshAccounts = null;
+  private List<AccountInfo> _lRefreshAccounts = null;
   private AccountInfo _refreshAccount = null;
   public int count;
   public int idc;
@@ -767,7 +767,7 @@ public class DepartmentMenu extends AbstractMenuState {
     }
     if (_lRefreshAccounts != null && _lRefreshAccounts.size() != 0) {
       DecimalFormat format = new DecimalFormat("0000000000");
-      _refreshAccount = (AccountInfo) _lRefreshAccounts.remove(0);
+      _refreshAccount = _lRefreshAccounts.remove(0);
       String account;
       _log.debug("Refreshing user name: " + _refreshAccount.getHandle());
       account = format.format(_refreshAccount.getAccountID());
@@ -782,7 +782,7 @@ public class DepartmentMenu extends AbstractMenuState {
 
     _lRefreshAccounts = UserManager.getSubAccountsforUser(_session.getUserID());
     for (int i = _lRefreshAccounts.size() - 1; i > -1; i--) {
-      info = (AccountInfo) _lRefreshAccounts.get(i);
+      info = _lRefreshAccounts.get(i);
       if (!info.needsRefresh()) {
         _lRefreshAccounts.remove(i);
       }

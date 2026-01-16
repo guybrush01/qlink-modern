@@ -26,7 +26,6 @@ package org.jbrain.qlink.chat.irc.simple;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -317,9 +316,8 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
         if (cmd.getUser().equals(SERVER_NICK)) {
           _log.debug("Sending join information to channel");
           // print joins for all the users in here.
-          Iterator i = room._htUsers.keySet().iterator();
-          while (i.hasNext()) {
-            room.sendJoinInfo(((SeatInfo) room._htUsers.get(i.next())).getHandle().toString());
+          for (SeatInfo seat : room._htUsers.values()) {
+            room.sendJoinInfo(seat.getHandle().toString());
           }
           room.setJoinedStatus(true);
         } else {
@@ -396,7 +394,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
   }
 
   /** @return */
-  private Set getIRCUsers() {
+  private Set<String> getIRCUsers() {
     return _hsIRCUsers;
   }
 

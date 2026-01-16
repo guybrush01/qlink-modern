@@ -25,7 +25,6 @@ package org.jbrain.qlink.state;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -42,12 +41,10 @@ public class ShowStatsState extends AbstractMenuState {
   public void activate() throws IOException {
     // do not activate this state, as we don't need to switch state.
     // just display the stats.
-    Map m = _session.getServer().getAttributes();
+    Map<String, Object> m = _session.getServer().getAttributes();
     _lText = new ArrayList<>();
-    Iterator i = m.keySet().iterator();
-    while (i.hasNext()) {
-      Object o = i.next();
-      addLine(o.toString() + ": " + m.get(o));
+    for (Map.Entry<String, Object> entry : m.entrySet()) {
+      addLine(entry.getKey() + ": " + entry.getValue());
     }
     _session.send(new InitDataSend(0, 0, 0));
     sendSingleLines();

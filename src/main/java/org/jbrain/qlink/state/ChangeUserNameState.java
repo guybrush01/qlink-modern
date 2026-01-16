@@ -35,7 +35,7 @@ import org.jbrain.qlink.user.UserManager;
 public class ChangeUserNameState extends AbstractState {
   private static Logger _log = Logger.getLogger(ChangeUserNameState.class);
   public static final int PHASE_INITIAL = 1;
-  private List _lAccounts;
+  private List<AccountInfo> _lAccounts;
   private QState _intState;
 
   public ChangeUserNameState(QSession session) {
@@ -55,7 +55,7 @@ public class ChangeUserNameState extends AbstractState {
 
     _lAccounts = UserManager.getAccountsforUser(_session.getUserID());
     for (int i = _lAccounts.size() - 1; i > -1; i--) {
-      info = (AccountInfo) _lAccounts.get(i);
+      info = _lAccounts.get(i);
       if (info.getHandle().equals(_session.getHandle())) {
         _lAccounts.remove(i);
       }
@@ -69,7 +69,7 @@ public class ChangeUserNameState extends AbstractState {
               MenuItem.COST_NO_CHARGE,
               false));
       for (int i = 0; i < _lAccounts.size(); i++) {
-        info = (AccountInfo) _lAccounts.get(i);
+        info = _lAccounts.get(i);
         // show screen name as menu item.
         _session.send(
             new MenuItem(
@@ -100,7 +100,7 @@ public class ChangeUserNameState extends AbstractState {
       id = ((SelectMenuItem) a).getID() - DepartmentMenu.RESERVED_MENU_REF_ID_MIN;
       _log.debug("User selected item: " + id);
       if (id > -1 && id < _lAccounts.size()) {
-        info = ((AccountInfo) _lAccounts.get(id));
+        info = _lAccounts.get(id);
         _log.debug("User selected screen name '" + info.getHandle() + "'.");
         _session.setAccountInfo(info);
         _session.send(new InitDataSend(0, 0, 0));

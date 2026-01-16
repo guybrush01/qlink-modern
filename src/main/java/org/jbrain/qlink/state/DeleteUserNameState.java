@@ -48,7 +48,7 @@ public class DeleteUserNameState extends AbstractState {
           AccountInfo info;
           _log.debug("We received " + a.getName() + " from yes/no dialog");
           if (a instanceof DialogYes) {
-            info = (AccountInfo) _lAccounts.get(_iSelectedID);
+            info = _lAccounts.get(_iSelectedID);
 
             _session.send(
                 ((YesNoDialog) d)
@@ -72,7 +72,7 @@ public class DeleteUserNameState extends AbstractState {
       };
 
   private QState _intState;
-  private List _lAccounts;
+  private List<AccountInfo> _lAccounts;
   private ArrayList<Integer> _alDeleted = new ArrayList<>();
 
   static {
@@ -100,7 +100,7 @@ public class DeleteUserNameState extends AbstractState {
 
     _lAccounts = UserManager.getSubAccountsforUser(_session.getUserID());
     for (int i = _lAccounts.size() - 1; i > -1; i--) {
-      info = (AccountInfo) _lAccounts.get(i);
+      info = _lAccounts.get(i);
       if (info.getHandle().equals(_session.getHandle())) {
         _lAccounts.remove(i);
       }
@@ -114,7 +114,7 @@ public class DeleteUserNameState extends AbstractState {
               MenuItem.COST_NO_CHARGE,
               false));
       for (int i = 0; i < _lAccounts.size(); i++) {
-        info = (AccountInfo) _lAccounts.get(i);
+        info = _lAccounts.get(i);
         // show screen name as menu item.
         _session.send(
             new MenuItem(
@@ -148,12 +148,12 @@ public class DeleteUserNameState extends AbstractState {
           _session.send(
               new FileText(
                   "User name '"
-                      + ((AccountInfo) _lAccounts.get(_iSelectedID)).getHandle()
+                      + _lAccounts.get(_iSelectedID).getHandle()
                       + "' has already been removed.",
                   false));
           _session.send(new FileText("         <PRESS F5 TO GO BACK>", true));
         } else {
-          QHandle handle = ((AccountInfo) _lAccounts.get(_iSelectedID)).getHandle();
+          QHandle handle = _lAccounts.get(_iSelectedID).getHandle();
           _log.debug("User selected screen name '" + handle + "' for removal");
           state = new YesNoMaybeDialogState(_session, _accountDialog, _accountCallBack);
           state.activate();
@@ -161,7 +161,7 @@ public class DeleteUserNameState extends AbstractState {
         rc = true;
       }
     } else if (a instanceof DeleteAccountInSlotAck) {
-      info = (AccountInfo) _lAccounts.get(_iSelectedID);
+      info = _lAccounts.get(_iSelectedID);
       _session.send(new InitDataSend(0, 0, 0));
       try {
         info.delete();
