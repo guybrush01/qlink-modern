@@ -48,7 +48,7 @@ public class ChatProfile {
   }
 
   public void setEntry(String entry, String str) {
-    if (str != null && !str.equals("")) _hmString.put(entry, str);
+    if (str != null && !str.isEmpty()) _hmString.put(entry, str);
     else _hmString.remove(entry);
   }
 

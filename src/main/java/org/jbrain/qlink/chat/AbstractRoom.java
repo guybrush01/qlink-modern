@@ -170,7 +170,7 @@ public abstract class AbstractRoom implements QRoom {
   }
 
   protected void processSystemMessageEvent(SystemMessageEvent event) {
-    if (event.getName().equals("") || _handle.toString().equals(event.getName())) {
+    if (event.getName().isEmpty() || _handle.toString().equals(event.getName())) {
       if (event != null && !_listeners.isEmpty()) {
         for (int i = 0, size = _listeners.size(); i < size; i++) {
           _listeners.get(i).systemSent(event);

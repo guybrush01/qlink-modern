@@ -177,7 +177,7 @@ public class Authentication extends AbstractAccountState {
               int iUserID = loginData.userId;
               // little add for getting preexisting users information.
               String name = loginData.userName;
-              _bInfoNeeded = name == null || name.equals("");
+              _bInfoNeeded = name == null || name.isEmpty();
               _session.setAccountInfo(
                   new AccountInfo(
                       iUserID,

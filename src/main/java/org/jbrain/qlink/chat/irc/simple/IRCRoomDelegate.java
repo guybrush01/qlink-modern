@@ -259,7 +259,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
       processEvent((ChatEvent) event);
       if (_bJoined) {
         String name = ((ChatEvent) event).getName();
-        if (name == null || name.equals(""))
+        if (name == null || name.isEmpty())
           sendIRCCommand(new MessageCommand(_sChannel, ((ChatEvent) event).getText()));
         else
           sendIRCCommand(

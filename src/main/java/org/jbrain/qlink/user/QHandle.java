@@ -28,7 +28,7 @@ public class QHandle {
   private String _sKey;
 
   public QHandle(String handle) {
-    if (handle == null || handle.equals("")) {
+    if (handle == null || handle.isEmpty()) {
       _sHandle = "";
       _sKey = "";
     } else {
@@ -40,7 +40,7 @@ public class QHandle {
 
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null && _sKey.equals("")) return true;
+    if (o == null && _sKey.isEmpty()) return true;
     if (o instanceof QHandle && ((QHandle) o)._sKey.equals(_sKey)) {
       return true;
     } else if (o instanceof String) {

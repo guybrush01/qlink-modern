@@ -51,7 +51,7 @@ public class GetUserInfoState extends AbstractState {
           _log.debug("We received " + a.getName() + " from entry dialog");
           if (a instanceof ZA) {
             _sName = ((ZA) a).getResponse().trim();
-            if (_sName.equals("")) {
+            if (_sName.isEmpty()) {
               _session.send(((EntryDialog) d).getErrorResponse("Please enter a valid name."));
             } else {
               _log.debug("User entered Name: " + _sName);
@@ -74,7 +74,7 @@ public class GetUserInfoState extends AbstractState {
           _log.debug("We received " + a.getName() + " from entry dialog");
           if (a instanceof ZA) {
             _sCity = ((ZA) a).getResponse().trim();
-            if (_sCity.equals("")) {
+            if (_sCity.isEmpty()) {
               _session.send(((EntryDialog) d).getErrorResponse("Please enter a valid city."));
             } else {
               _log.debug("User entered City: " + _sCity);
@@ -97,7 +97,7 @@ public class GetUserInfoState extends AbstractState {
           _log.debug("We received " + a.getName() + " from entry dialog");
           if (a instanceof ZA) {
             _sState = ((ZA) a).getResponse().trim();
-            if (_sState.equals("")) {
+            if (_sState.isEmpty()) {
               _session.send(
                   ((EntryDialog) d).getErrorResponse("Please enter a valid state/province."));
             } else {
@@ -122,7 +122,7 @@ public class GetUserInfoState extends AbstractState {
           _log.debug("We received " + a.getName() + " from entry dialog");
           if (a instanceof ZA) {
             _sCountry = ((ZA) a).getResponse().trim();
-            if (_sCountry.equals("")) {
+            if (_sCountry.isEmpty()) {
               _session.send(
                   ((EntryDialog) d).getErrorResponse("Please enter a valid state/province."));
             } else {

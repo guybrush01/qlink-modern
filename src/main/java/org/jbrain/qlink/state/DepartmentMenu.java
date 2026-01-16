@@ -387,7 +387,7 @@ public class DepartmentMenu extends AbstractMenuState {
       if (gateway != null) {
         String address = gateway.getAddress();
         int port = gateway.getPort();
-        if (address == null || address.equals("")) {
+        if (address == null || address.isEmpty()) {
           _log.debug("Gateway address is null or empty.");
           _session.send(new GatewayExit("Destination invalid"));
         } else {
