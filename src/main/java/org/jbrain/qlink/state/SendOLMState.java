@@ -36,7 +36,7 @@ public class SendOLMState extends AbstractState {
   private static Logger _log = Logger.getLogger(SendOLMState.class);
   private QState _intState;
   private QHandle _recipient;
-  private ArrayList _alOLMText = new ArrayList();
+  private ArrayList<String> _alOLMText = new ArrayList<>();
 
   public SendOLMState(QSession session, QHandle recipient) {
     super(session);

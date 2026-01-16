@@ -35,7 +35,7 @@ import org.jbrain.qlink.cmd.action.fdo.FDOWindowType;
 import org.jbrain.qlink.cmd.action.fdo.NewWindow;
 
 public class FDOMenuHelper {
-  ArrayList _alItems = new ArrayList();
+  ArrayList<FDOCommand> _alItems = new ArrayList<>();
 
   public FDOMenuHelper() {
     // _alItems.add(new NewWindow(FDOWindowType.TYPE_MENU));
@@ -52,13 +52,13 @@ public class FDOMenuHelper {
   }
 
   public Action[] getMenu() {
-    ArrayList l = new ArrayList();
+    ArrayList<FDO> l = new ArrayList<>();
     FDO fdo = new FDO(new NewWindow(FDOWindowType.TYPE_MENU));
     for (int i = 0; i < _alItems.size(); i++) {
-      if (!fdo.add((FDOCommand) _alItems.get(i))) {
+      if (!fdo.add(_alItems.get(i))) {
         l.add(fdo);
         fdo = new FDO(new ContinueWindow());
-        fdo.add((FDOCommand) _alItems.get(i));
+        fdo.add(_alItems.get(i));
       }
     }
     l.add(fdo);

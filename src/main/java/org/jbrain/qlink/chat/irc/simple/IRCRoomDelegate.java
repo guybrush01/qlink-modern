@@ -181,7 +181,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
    * @see org.jbrain.qlink.chat.QRoomDelegate#getExtSeatInfoList(org.jbrain.qlink.chat.QSeat)
    */
   public QSeat[] getExtSeatInfoList(QHandle handle) {
-    List l = new ArrayList();
+    List<QSeat> l = new ArrayList<>();
     Channel chan = _ircConn.getClientState().getChannel(_sChannel);
     if (chan != null) {
       Enumeration enu = chan.getMembers();
@@ -207,7 +207,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
    * @param channel
    */
   protected void processCommand(SeatInfo info, String text) {
-    ArrayList alMsg = new ArrayList();
+    ArrayList<String> alMsg = new ArrayList<>();
     String error = null;
     String name = null, msg = null;
     QHandle handle;

@@ -137,7 +137,7 @@ class AuditoriumDelegate extends RoomDelegate {
     List l;
     String str;
     String name = handle.toString();
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     tf.add(text);
     l = tf.getList();
@@ -268,7 +268,7 @@ class AuditoriumDelegate extends RoomDelegate {
 
   public String getInfo() {
     // we'll grab the speaker information here.
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
 
     try {
       _log.debug("Reading auditorium text");

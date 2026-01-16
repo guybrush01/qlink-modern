@@ -26,9 +26,9 @@ package org.jbrain.qlink.chat;
 import java.util.HashMap;
 
 public class ChatProfile {
-  private HashMap _hmBoolean = new HashMap();
-  private HashMap _hmString = new HashMap();
-  private HashMap _hmNumeric = new HashMap();
+  private HashMap<String, String> _hmBoolean = new HashMap<>();
+  private HashMap<String, String> _hmString = new HashMap<>();
+  private HashMap<String, Integer> _hmNumeric = new HashMap<>();
 
   /** */
   public ChatProfile() {

@@ -47,7 +47,7 @@ public class SendEmailState extends AbstractState {
 
 	private QHandle _recipient;
 	private int _iToID;
-	private StringBuffer _sbText=new StringBuffer();
+	private StringBuilder _sbText=new StringBuilder();
 	
 	public SendEmailState(QSession session, QHandle recipient) {
 		super(session);

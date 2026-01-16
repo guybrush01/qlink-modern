@@ -51,7 +51,7 @@ public abstract class AbstractChatState extends AbstractState {
 
   class QueuedChatEventListener implements RoomEventListener {
     private boolean _bSuspend = true;
-    private ArrayList _alQueue = new ArrayList();
+    private ArrayList<RoomEvent> _alQueue = new ArrayList<>();
 
     /* (non-Javadoc)
      * @see org.jbrain.qlink.chat.BasicRoomEventListener#eventOccurred(org.jbrain.qlink.chat.RoomEvent)
@@ -65,7 +65,7 @@ public abstract class AbstractChatState extends AbstractState {
 
       _bSuspend = false;
       while (_alQueue.size() > 0) {
-        e = (RoomEvent) _alQueue.remove(0);
+        e = _alQueue.remove(0);
         if (e instanceof ChatEvent) userSaid((ChatEvent) e);
         else if (e instanceof SystemMessageEvent) systemSent((SystemMessageEvent) e);
         else if (e instanceof JoinEvent && ((JoinEvent) e).getType() == JoinEvent.EVENT_JOIN)
@@ -356,9 +356,9 @@ public abstract class AbstractChatState extends AbstractState {
   }
   protected void sendUserList() {
     QSeat[] seats = _room.getExtSeatInfoList();
-    List l = new ArrayList();
+    List<String> l = new ArrayList<>();
     l.add("Currently in room:");
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("  ");
     String name = pad;
     for (int i = 0; i < seats.length; i++) {

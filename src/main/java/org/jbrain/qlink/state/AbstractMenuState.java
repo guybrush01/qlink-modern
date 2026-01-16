@@ -124,11 +124,11 @@ public abstract class AbstractMenuState extends AbstractState {
   protected static final int RESERVED_MENU_REF_ID_MAX = 0x8fffff;
   protected static final int XMIT_BLOCKS_MAX = 16;
 
-  protected List _lText;
+  protected List<String> _lText;
   private int _iLines;
-  protected ArrayList _alMessages = new ArrayList();
-  protected HashMap _hmMessages = new HashMap();
-  protected ArrayList _alMenu = new ArrayList();
+  protected ArrayList<MessageEntry> _alMessages = new ArrayList<>();
+  protected HashMap<Integer, MessageEntry> _hmMessages = new HashMap<>();
+  protected ArrayList<MenuEntry> _alMenu = new ArrayList<>();
   private boolean _bSuperChat = false;
 
   public AbstractMenuState(QSession session) {
@@ -170,7 +170,7 @@ public abstract class AbstractMenuState extends AbstractState {
     MenuEntry m;
 
     while (i < size) {
-      m = (MenuEntry) _alMenu.get(i++);
+      m = _alMenu.get(i++);
       if (m.getType() == MenuItem.MESSAGE_BASE)
         _session.send(new MenuItem(m.getID(), m.getTitle(), m.getID(), i == size && id >= 10));
       else
@@ -209,22 +209,22 @@ public abstract class AbstractMenuState extends AbstractState {
   protected void sendSingleLines() throws IOException {
     int i = 0;
     while (i++ < 18 && _iLines + 1 < _lText.size()) {
-      _session.send(new FileText((String) _lText.get(_iLines++) + (char) 0x7f, false));
+      _session.send(new FileText(_lText.get(_iLines++) + (char) 0x7f, false));
     }
     if (_iLines + 1 < _lText.size()) {
-      _session.send(new FileTextPing((String) _lText.get(_iLines++) + (char) 0x7f));
+      _session.send(new FileTextPing(_lText.get(_iLines++) + (char) 0x7f));
     } else {
-      _session.send(new FileText((String) _lText.get(_iLines++) + (char) 0x7f, true));
+      _session.send(new FileText(_lText.get(_iLines++) + (char) 0x7f, true));
     }
   }
 
   protected void sendPackedLines() throws IOException {
     int i = 0;
     String line;
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     // we want to send up to 19 lines...
     while (i++ < 18 && _iLines + 1 < _lText.size()) {
-      line = (String) _lText.get(_iLines++);
+      line = _lText.get(_iLines++);
       if (sb.length() + 1 + line.length() > 117) {
         // send packet.
         _session.send(new FileText(sb.toString(), false));
@@ -239,9 +239,9 @@ public abstract class AbstractMenuState extends AbstractState {
       // we have stored data, go ahead and send it.  We will only be sending 18 lines in this case.
       _session.send(new FileTextPing(sb.toString()));
     } else if (_iLines + 1 < _lText.size()) {
-      _session.send(new FileTextPing((String) _lText.get(_iLines++) + (char) 0x7f));
+      _session.send(new FileTextPing(_lText.get(_iLines++) + (char) 0x7f));
     } else {
-      _session.send(new FileText((String) _lText.get(_iLines++) + (char) 0x7f, true));
+      _session.send(new FileText(_lText.get(_iLines++) + (char) 0x7f, true));
     }
   }
 
@@ -266,7 +266,7 @@ public abstract class AbstractMenuState extends AbstractState {
       while (i < 4 && _iLines < size - 1) {
         i++;
         _iLines++;
-        m = (MessageEntry) _alMessages.get(size - _iLines);
+        m = _alMessages.get(size - _iLines);
         _session.send(
             new PostingItem(
                 m.getID(),
@@ -277,7 +277,7 @@ public abstract class AbstractMenuState extends AbstractState {
                 PostingItem.NEXT));
       }
       _iLines++;
-      m = (MessageEntry) _alMessages.get(size - _iLines);
+      m = _alMessages.get(size - _iLines);
       if (_iLines == size) {
         // after the ++ above, we should be at end.
         _session.send(
@@ -329,7 +329,7 @@ public abstract class AbstractMenuState extends AbstractState {
       while (i < 4 && _iLines < size - 1) {
         i++;
         _iLines++;
-        m = (MessageEntry) _alMessages.get(size - _iLines);
+        m = _alMessages.get(size - _iLines);
          tf.add(
 				"\n "+
              // m.getID()+"  "+
@@ -340,7 +340,7 @@ public abstract class AbstractMenuState extends AbstractState {
                 );
       }
       _iLines++;
-      m = (MessageEntry) _alMessages.get(size - _iLines);
+      m = _alMessages.get(size - _iLines);
       if (_iLines == size) {
         // after the ++ above, we should be at end.
        

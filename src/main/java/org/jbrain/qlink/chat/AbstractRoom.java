@@ -31,7 +31,7 @@ public abstract class AbstractRoom implements QRoom {
 
   protected QRoomDelegate _room;
   protected QHandle _handle;
-  private ArrayList _listeners = new ArrayList();
+  private ArrayList<RoomEventListener> _listeners = new ArrayList<>();
   private RoomEventListener _listener =
       new RoomEventListener() {
         public void userSaid(ChatEvent event) {
@@ -139,11 +139,11 @@ public abstract class AbstractRoom implements QRoom {
     if (event != null && _listeners.size() > 0) {
       if (event.getType() == JoinEvent.EVENT_JOIN)
         for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).userJoined(event);
+          _listeners.get(i).userJoined(event);
         }
       else
         for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).userLeft(event);
+          _listeners.get(i).userLeft(event);
         }
     }
   }
@@ -152,11 +152,11 @@ public abstract class AbstractRoom implements QRoom {
     if (event != null && _listeners.size() > 0) {
       if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS)
         for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).acceptingQuestions(event);
+          _listeners.get(i).acceptingQuestions(event);
         }
       else
         for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).rejectingQuestions(event);
+          _listeners.get(i).rejectingQuestions(event);
         }
     }
   }
@@ -173,7 +173,7 @@ public abstract class AbstractRoom implements QRoom {
     if (event.getName().equals("") || _handle.toString().equals(event.getName())) {
       if (event != null && _listeners.size() > 0) {
         for (int i = 0, size = _listeners.size(); i < size; i++) {
-          ((RoomEventListener) _listeners.get(i)).systemSent(event);
+          _listeners.get(i).systemSent(event);
         }
       }
     }

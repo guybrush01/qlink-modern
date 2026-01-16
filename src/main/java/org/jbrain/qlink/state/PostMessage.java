@@ -44,7 +44,7 @@ public class PostMessage extends AbstractState {
    */
   private QState _state;
 
-  private StringBuffer _sbText = new StringBuffer();
+  private StringBuilder _sbText = new StringBuilder();
   private int _iParentID;
   private int _iNextID;
  

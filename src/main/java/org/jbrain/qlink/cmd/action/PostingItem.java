@@ -67,7 +67,7 @@ public class PostingItem extends AbstractAction {
   }
 
   private String makeString(int id, String title, String author, int replies, Date date) {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     sb.append("    SUBJ: ");
     if (replies > 0) {
       if (title.length() > 23) {

@@ -48,8 +48,8 @@ public class SaveFileState extends AbstractState {
   public String Ftype;
   public int FileText;
   private int _iToID;
-  private StringBuffer _sbData = new StringBuffer();
-  private StringBuffer _sbDatas = new StringBuffer();
+  private StringBuilder _sbData = new StringBuilder();
+  private StringBuilder _sbDatas = new StringBuilder();
   //public int _IDf;
   public SaveFileState(QSession session,String _filename) {
     super(session);
@@ -144,7 +144,7 @@ public class SaveFileState extends AbstractState {
   }
  private static String asciiToHex(String asciiValue){
     char[] chars = asciiValue.toCharArray();
-    StringBuffer hex = new StringBuffer();
+    StringBuilder hex = new StringBuilder();
     for (int i = 0; i < chars.length; i++){
         hex.append(Integer.toHexString((int) chars[i])+" ");
     }
@@ -153,11 +153,11 @@ public class SaveFileState extends AbstractState {
 
 
 
-  private synchronized void saveFile(int id, StringBuffer Data) {
+  private synchronized void saveFile(int id, StringBuilder Data) {
     _log.debug("File content for SQL in Hex "+ asciiToHex(Data.toString()));
     try {
       _log.debug("Saving File to sql");
-      InputStream is = new StringBufferInputStream(Data.toString());
+      InputStream is = new ByteArrayInputStream(Data.toString().getBytes());
       int result = FileDAO.getInstance().createWithDownloads(id, Filename, Ftype, FileText, is);
       if (result > 0) {
         _log.debug("File successfully saved");

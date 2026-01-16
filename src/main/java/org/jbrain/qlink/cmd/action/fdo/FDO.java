@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import org.jbrain.qlink.cmd.action.AbstractAction;
 
 public class FDO extends AbstractAction {
-  private ArrayList _alCmds = new ArrayList();
+  private ArrayList<FDOCommand> _alCmds = new ArrayList<>();
   private int _iLen = 10;
   private boolean _bContinue = false;
 
@@ -61,7 +61,7 @@ public class FDO extends AbstractAction {
     int i = 10;
 
     for (int pos = 0; pos < _alCmds.size(); pos++) {
-      cmd = (FDOCommand) _alCmds.get(pos);
+      cmd = _alCmds.get(pos);
       b = cmd.getBytes();
       System.arraycopy(b, 0, data, i, b.length);
       i += b.length;

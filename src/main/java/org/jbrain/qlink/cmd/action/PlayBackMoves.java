@@ -26,7 +26,7 @@ package org.jbrain.qlink.cmd.action;
 import java.util.ArrayList;
 
 public class PlayBackMoves extends AbstractAction {
-  private ArrayList _alActions = new ArrayList();
+  private ArrayList<Action> _alActions = new ArrayList<>();
   private int _iLen = 0;
 
   /** @param action */
@@ -52,7 +52,7 @@ public class PlayBackMoves extends AbstractAction {
     int pos = 10;
     Action a;
     for (int i = 0, size = _alActions.size(); i < size; i++) {
-      a = (Action) _alActions.get(i);
+      a = _alActions.get(i);
       byte[] b = a.getBytes();
       data[pos++] = (byte) ((b.length - 8) + 0x0e);
       System.arraycopy(b, 8, data, pos, b.length - 8);

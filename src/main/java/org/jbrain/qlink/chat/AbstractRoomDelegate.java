@@ -302,7 +302,7 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   }
 
   protected void processCommand(SeatInfo info, String text) {
-    ArrayList alMsg = new ArrayList();
+    ArrayList<String> alMsg = new ArrayList<>();
     String error = null;
     String name = null, msg = null;
     QHandle handle;
@@ -385,7 +385,7 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
         else if (num < 1) num = 2;
         if (size > 99) size = 99;
         else if (size < 2) size = 6;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(info.getHandle());
         sb.append(" rolled ");
         sb.append(num);

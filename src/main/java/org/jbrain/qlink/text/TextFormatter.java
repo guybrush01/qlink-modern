@@ -11,7 +11,7 @@ public class TextFormatter {
   public static final int FORMAT_PADDED = 4;
   private static final int LINE_LENGTH = 40;
 
-  private ArrayList _alText = new ArrayList();
+  private ArrayList<String> _alText = new ArrayList<>();
   private int _iFormat;
   private int _iWidth;
 
@@ -98,7 +98,7 @@ public class TextFormatter {
     }
   }
 
-  public List getList() {
+  public List<String> getList() {
     return Collections.unmodifiableList(_alText);
   }
 //SKERN Wat is that?

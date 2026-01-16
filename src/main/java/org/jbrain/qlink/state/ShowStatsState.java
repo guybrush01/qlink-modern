@@ -43,7 +43,7 @@ public class ShowStatsState extends AbstractMenuState {
     // do not activate this state, as we don't need to switch state.
     // just display the stats.
     Map m = _session.getServer().getAttributes();
-    _lText = new ArrayList();
+    _lText = new ArrayList<>();
     Iterator i = m.keySet().iterator();
     while (i.hasNext()) {
       Object o = i.next();

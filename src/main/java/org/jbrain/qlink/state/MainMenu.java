@@ -48,7 +48,7 @@ public class MainMenu extends AbstractState {
   }
 
   public void sendBulletin() throws IOException {
-    StringBuffer sb = new StringBuffer();
+    StringBuilder sb = new StringBuilder();
     char delim = (char) 0xff;
 
     try {

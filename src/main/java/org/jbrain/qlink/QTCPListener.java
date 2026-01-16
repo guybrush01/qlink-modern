@@ -81,7 +81,7 @@ public class QTCPListener extends Thread {
 
   public void run() {
     int rc = 0;
-    ArrayList servers = new ArrayList();
+    ArrayList<ProxyThread> servers = new ArrayList<>();
     QConnection conn;
     QSession session;
     ServerSocket serverSocket = null;

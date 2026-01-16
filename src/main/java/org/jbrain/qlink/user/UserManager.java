@@ -35,8 +35,8 @@ import org.jbrain.qlink.db.entity.Account;
 public class UserManager {
   private static Logger _log = Logger.getLogger(UserManager.class);
 
-  public static List getAccountsforUser(int id) {
-    List l = new ArrayList();
+  public static List<AccountInfo> getAccountsforUser(int id) {
+    List<AccountInfo> l = new ArrayList<>();
     try {
       _log.debug("Checking for accounts for User ID: " + id);
       List<Account> accounts = AccountDAO.getInstance().findByUserId(id);
@@ -62,8 +62,8 @@ public class UserManager {
     return null;
   }
 
-  public static List getSubAccountsforUser(int id) {
-    List l = new ArrayList();
+  public static List<AccountInfo> getSubAccountsforUser(int id) {
+    List<AccountInfo> l = new ArrayList<>();
     try {
       _log.debug("Checking for sub accounts for User ID: " + id);
       List<Account> accounts = AccountDAO.getInstance().findSubAccountsByUserId(id);

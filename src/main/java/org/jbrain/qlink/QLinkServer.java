@@ -149,8 +149,8 @@ public class QLinkServer {
     return _htSessions;
   }
 
-  public Map getAttributes() {
-    HashMap m = new HashMap();
+  public Map<String, Object> getAttributes() {
+    HashMap<String, Object> m = new HashMap<>();
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     m.put("OpenSessions", new Integer(_vSessions.size()));
     m.put("UsersLoggedIn", new Integer(_htSessions.size()));

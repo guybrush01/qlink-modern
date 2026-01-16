@@ -68,7 +68,7 @@ public class PlayGame extends AbstractPhaseState {
    * @uml.property name="_alInvitees"
    * @uml.associationEnd elementType="org.jbrain.qlink.cmd.action.GamePlayer" multiplicity= "(0 -1)"
    */
-  private ArrayList _alInvitees = new ArrayList();
+  private ArrayList<GamePlayer> _alInvitees = new ArrayList<>();
 
   private TimerTask _timerTask;
   private boolean _bRequestRestart = false;
@@ -349,7 +349,7 @@ public class PlayGame extends AbstractPhaseState {
     _log.debug("Checking invite list for issues");
     for (int i = 0; i < _alInvitees.size(); i++) {
       // add player
-      invitee = (GamePlayer) _alInvitees.get(i);
+      invitee = _alInvitees.get(i);
       handle = new QHandle(invitee.getHandle());
       try {
         if (!_game.addPlayer(handle)) {

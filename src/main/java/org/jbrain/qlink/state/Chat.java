@@ -44,7 +44,7 @@ public class Chat extends AbstractChatState {
   private int _iSeat;
   private RoomInfo[] _rooms;
   private int _roomPos;
-  private ArrayList _alQuestion = new ArrayList();
+  private ArrayList<String> _alQuestion = new ArrayList<>();
 
   public Chat(QSession session) {
     super(session);

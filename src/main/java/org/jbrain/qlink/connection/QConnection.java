@@ -68,7 +68,7 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
   private QLinkServer _qls;
 
   // Send queue for flow control
-  private final ArrayList _alSendQueue = new ArrayList();
+  private final ArrayList<Action> _alSendQueue = new ArrayList<>();
   private int _iQLen;
 
   // Event listeners
@@ -284,10 +284,10 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
     // we need our drain our SendQueue.
     _log.debug("Received incoming packet with sequence number: " + sequence);
     if (_iQLen > 0) {
-      seq = ((Action) _alSendQueue.get(0)).getSendSequence();
+      seq = _alSendQueue.get(0).getSendSequence();
       done = !(sequence >= seq || seq - sequence > QSIZE);
       while (_iQLen > 0 && !done) {
-        seq = ((Action) _alSendQueue.remove(0)).getSendSequence();
+        seq = _alSendQueue.remove(0).getSendSequence();
         // decrease number of unacks
         _iQLen--;
         _log.debug("Freed sequence number: " + seq);
@@ -313,7 +313,7 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
       int seq = 0;
       _log.debug("Sending Queued Actions ");
       while (_iQLen < QSIZE && _iQLen < _alSendQueue.size()) {
-        write((Command) _alSendQueue.get(_iQLen));
+        write(_alSendQueue.get(_iQLen));
       }
       if (_alSendQueue.size() > QSIZE) {
         addTimer();
@@ -386,7 +386,7 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
     _alSendQueue.add(a);
     if (_iQLen < QSIZE && !_bSuspend) {
       // sending next item in queue
-      write((Command) _alSendQueue.get(_iQLen));
+      write(_alSendQueue.get(_iQLen));
     } else {
       _log.debug("Queuing " + a.getName());
       // we need an ack, so queue this, and start the timer to ping client
@@ -445,7 +445,7 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
   private static final String HEX_CHARS = "0123456789ABCDEF";
 
   public static void trace(String prefix, byte[] data, int i, int length) {
-    StringBuffer sb = new StringBuffer(length * 3 + prefix.length());
+    StringBuilder sb = new StringBuilder(length * 3 + prefix.length());
     sb.append(prefix);
     byte d;
     while (length > 0) {

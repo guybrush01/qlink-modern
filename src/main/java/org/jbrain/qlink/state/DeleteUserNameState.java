@@ -73,7 +73,7 @@ public class DeleteUserNameState extends AbstractState {
 
   private QState _intState;
   private List _lAccounts;
-  private ArrayList _alDeleted = new ArrayList();
+  private ArrayList<Integer> _alDeleted = new ArrayList<>();
 
   static {
     // define a static dialog for this.
