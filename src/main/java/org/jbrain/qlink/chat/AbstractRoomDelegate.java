@@ -100,7 +100,7 @@ public abstract class AbstractRoomDelegate implements QRoomDelegate {
   /** @return */
   public boolean isLocked() {
     // if there are admins monitoring, do not remove room.
-    return _bLocked || (_htAdmins.size() > 0);
+    return _bLocked || (!_htAdmins.isEmpty());
   }
 
   /** @return */

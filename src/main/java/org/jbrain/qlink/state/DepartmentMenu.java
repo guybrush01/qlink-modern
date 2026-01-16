@@ -772,7 +772,7 @@ public class DepartmentMenu extends AbstractMenuState {
       _log.debug("Refreshing user name: " + _refreshAccount.getHandle());
       account = format.format(_refreshAccount.getAccountID());
       _session.send(new AddSubAccount(account, _refreshAccount.getHandle().toString()));
-      if (_lRefreshAccounts.size() == 0) _lRefreshAccounts = null;
+      if (_lRefreshAccounts.isEmpty()) _lRefreshAccounts = null;
     }
   }
 
@@ -787,7 +787,7 @@ public class DepartmentMenu extends AbstractMenuState {
         _lRefreshAccounts.remove(i);
       }
     }
-    if (_lRefreshAccounts.size() == 0) {
+    if (_lRefreshAccounts.isEmpty()) {
       _lRefreshAccounts = null;
     }
   }

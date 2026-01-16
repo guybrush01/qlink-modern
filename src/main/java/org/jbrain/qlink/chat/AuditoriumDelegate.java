@@ -117,7 +117,7 @@ class AuditoriumDelegate extends RoomDelegate {
   public synchronized void queue(QHandle handle, String[] question) {
     _queue.add(new Question(handle, question));
 
-    if (_vRegList.size() > 0) {
+    if (!_vRegList.isEmpty()) {
       ArrayList<String> alMsg = new ArrayList<>();
       privmsgQuestion(alMsg, _queue.size() - 1);
       for (QSeat seat : _vRegList) {

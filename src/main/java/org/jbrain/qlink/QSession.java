@@ -143,7 +143,7 @@ public class QSession {
       processEvent(new TerminationEvent(this));
       // _server.removeSession(this);
     }
-    if (_htOLMTable.size() > 0) _log.warn("Session closing with unread OLMs!");
+    if (!_htOLMTable.isEmpty()) _log.warn("Session closing with unread OLMs!");
   }
 
   /** @return */

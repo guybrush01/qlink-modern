@@ -442,7 +442,7 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
     _autoJoin.disable();
     if (_bJoined) sendIRCCommand(new PartCommand(_sChannel, "Try QuantumLink RELOADED!"));
     _htRooms.remove(_sChannel);
-    if (_htRooms.size() == 0) disconnect();
+    if (_htRooms.isEmpty()) disconnect();
     super.close();
   }
 

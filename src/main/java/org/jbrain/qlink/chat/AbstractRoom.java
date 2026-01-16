@@ -136,7 +136,7 @@ public abstract class AbstractRoom implements QRoom {
   }
 
   protected void processJoinEvent(JoinEvent event) {
-    if (event != null && _listeners.size() > 0) {
+    if (event != null && !_listeners.isEmpty()) {
       if (event.getType() == JoinEvent.EVENT_JOIN)
         for (int i = 0, size = _listeners.size(); i < size; i++) {
           _listeners.get(i).userJoined(event);
@@ -149,7 +149,7 @@ public abstract class AbstractRoom implements QRoom {
   }
 
   protected void processQuestionStateEvent(QuestionStateEvent event) {
-    if (event != null && _listeners.size() > 0) {
+    if (event != null && !_listeners.isEmpty()) {
       if (event.getType() == QuestionStateEvent.ACCEPTING_QUESTIONS)
         for (int i = 0, size = _listeners.size(); i < size; i++) {
           _listeners.get(i).acceptingQuestions(event);
@@ -162,7 +162,7 @@ public abstract class AbstractRoom implements QRoom {
   }
 
   protected void processChatEvent(ChatEvent event) {
-    if (event != null && _listeners.size() > 0) {
+    if (event != null && !_listeners.isEmpty()) {
       for (int i = 0, size = _listeners.size(); i < size; i++) {
         ((RoomEventListener) _listeners.get(i)).userSaid(event);
       }
@@ -171,7 +171,7 @@ public abstract class AbstractRoom implements QRoom {
 
   protected void processSystemMessageEvent(SystemMessageEvent event) {
     if (event.getName().equals("") || _handle.toString().equals(event.getName())) {
-      if (event != null && _listeners.size() > 0) {
+      if (event != null && !_listeners.isEmpty()) {
         for (int i = 0, size = _listeners.size(); i < size; i++) {
           _listeners.get(i).systemSent(event);
         }

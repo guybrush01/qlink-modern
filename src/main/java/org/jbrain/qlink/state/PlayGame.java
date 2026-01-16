@@ -90,7 +90,7 @@ public class PlayGame extends AbstractPhaseState {
         _log.debug("Timeout occurred");
         List l = _game.getAbstainList();
         // did some folks not respond?
-        if (l.size() > 0) {
+        if (!l.isEmpty()) {
           // we have players not yet hooked to the game.
           seats = _game.getPlayers();
           for (int i = 0, size = seats.length; i < size; i++) {
@@ -157,7 +157,7 @@ public class PlayGame extends AbstractPhaseState {
               if (!_bInvited) {
                 _log.debug(event.getName() + " declined game invite");
                 _session.send(new PlayerDeclinedInvite(event.getSeatID()));
-                if (_game.getAbstainList().size() == 0) {
+                if (_game.getAbstainList().isEmpty()) {
                   // everyone either accepted or declined.  delete game and send errors out.
                   if (_timerTask != null) {
                     _timerTask.cancel();
@@ -288,14 +288,14 @@ public class PlayGame extends AbstractPhaseState {
         if (_log.isDebugEnabled())
           _log.debug(_session.getHandle() + " invites " + handle + " to play " + _sName);
 
-        _alInvitees.add(a);
+        _alInvitees.add((GamePlayer) a);
         rc = true;
       } else if (a instanceof GameLastPlayer) {
         rc = true;
         handle = ((GamePlayer) a).getHandle();
         if (_log.isDebugEnabled())
           _log.debug(_session.getHandle() + " invites " + handle + " to play " + _sName);
-        _alInvitees.add(a);
+        _alInvitees.add((GamePlayer) a);
         invitePlayers();
       }
     }

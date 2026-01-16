@@ -64,7 +64,7 @@ public abstract class AbstractChatState extends AbstractState {
       RoomEvent e;
 
       _bSuspend = false;
-      while (_alQueue.size() > 0) {
+      while (!_alQueue.isEmpty()) {
         e = _alQueue.remove(0);
         if (e instanceof ChatEvent) userSaid((ChatEvent) e);
         else if (e instanceof SystemMessageEvent) systemSent((SystemMessageEvent) e);

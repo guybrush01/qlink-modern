@@ -95,7 +95,7 @@ public class GameDelegate {
       if (_bSystemPickOrder) {
         List<SeatInfo> orig = new ArrayList<>(_alPlayers);
         l = new ArrayList<>();
-        while (orig.size() > 0) {
+        while (!orig.isEmpty()) {
           l.add(orig.remove(r.nextInt(orig.size())));
         }
       } else {
@@ -167,7 +167,7 @@ public class GameDelegate {
     // let everyone watching this game know.
     processEvent(new GameTerminationEvent(this));
     synchronized (_alDeclineList) {
-      while (_alPlayers.size() > 0) removePlayer(_alPlayers.get(0));
+      while (!_alPlayers.isEmpty()) removePlayer(_alPlayers.get(0));
     }
     _listeners.clear();
     _room.destroyGame(this);
@@ -268,7 +268,7 @@ public class GameDelegate {
           new GameEvent(this, GameEvent.LEAVE_GAME, seat.getSeatID(), seat.getHandle().toString()));
       synchronized (_alDeclineList) {
         // is everyone gone?
-        if (_alPlayers.size() == 0) terminate();
+        if (_alPlayers.isEmpty()) terminate();
       }
     } else if (seat != null) {
       _log.warn("Player '" + seat.getHandle() + "' not in game: " + _sName);
