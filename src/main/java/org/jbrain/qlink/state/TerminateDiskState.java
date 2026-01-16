@@ -91,8 +91,8 @@ public class TerminateDiskState extends AbstractState {
    */
   private void migrateAccounts(EntryDialog d, QHandle handle) throws IOException {
     AccountInfo info;
-    List newList;
-    List oldList;
+    List<AccountInfo> newList;
+    List<AccountInfo> oldList;
     boolean rc = false;
 
     info = UserManager.getAccount(handle);
@@ -130,9 +130,9 @@ public class TerminateDiskState extends AbstractState {
                   + "'");
           try {
             for (int i = 0, size = oldList.size(); i < size; i++) {
-              ((AccountInfo) oldList.get(i)).setUserID(info.getUserID());
-              ((AccountInfo) oldList.get(i)).setRefresh(true);
-              ((AccountInfo) oldList.get(i)).setPrimaryInd(false);
+              oldList.get(i).setUserID(info.getUserID());
+              oldList.get(i).setRefresh(true);
+              oldList.get(i).setPrimaryInd(false);
             }
             try {
               UserManager.deleteUser(_session.getUserID());

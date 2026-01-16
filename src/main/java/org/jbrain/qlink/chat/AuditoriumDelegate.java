@@ -134,7 +134,7 @@ class AuditoriumDelegate extends RoomDelegate {
 //
   private void output(QHandle handle, String text) {
     TextFormatter tf = new TextFormatter(TextFormatter.FORMAT_PADDED, 29);
-    List l;
+    List<String> l;
     String str;
     String name = handle.toString();
     StringBuilder sb = new StringBuilder();
@@ -143,7 +143,7 @@ class AuditoriumDelegate extends RoomDelegate {
     l = tf.getList();
     // spit out 3 lines as one chat text.
     for (int i = 0, size = l.size(); i < size; i++) {
-      str = (String) l.get(i);
+      str = l.get(i);
       _log.debug("appending: '" + str + "'");
       sb.append(str);
       if (i % 3 == 2 || i + 1 == size) {

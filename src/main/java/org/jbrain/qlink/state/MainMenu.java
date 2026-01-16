@@ -66,11 +66,11 @@ public class MainMenu extends AbstractState {
         }
         tf.add("\n        <PRESS F5 FOR MENU>");
         _log.debug("Sending Bulletin");
-        List l = tf.getList();
+        List<String> l = tf.getList();
         int size = l.size();
         String line;
         for (int i = 0; i < size; i++) {
-          line = (String) l.get(i);
+          line = l.get(i);
           if ((sb.length() + 1 + line.length()) > 117) {
             _session.send(new BulletinLine(sb.toString(), false));
             // strange, a trailing xff is not honored.

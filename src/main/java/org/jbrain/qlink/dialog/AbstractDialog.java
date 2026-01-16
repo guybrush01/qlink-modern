@@ -71,16 +71,16 @@ public abstract class AbstractDialog {
   }
 
   public Action[] getTextActions() {
-    List l = _text.getList();
+    List<String> l = _text.getList();
     int size = l.size() - 1;
     Action[] a = new Action[size];
     for (int i = 0; i < size; i++) {
       switch (_iType) {
         case TYPE_CHAT:
-          a[i] = new ChatDialogText(_sName, (String) l.get(i));
+          a[i] = new ChatDialogText(_sName, l.get(i));
           break;
         default:
-          a[i] = new DialogText(_sName, (String) l.get(i));
+          a[i] = new DialogText(_sName, l.get(i));
           break;
       }
     }
@@ -97,13 +97,13 @@ public abstract class AbstractDialog {
     TextFormatter tf = new TextFormatter();
     tf.add(string);
     tf.add("\n         <PRESS F5 TO CONTINUE>");
-    List l = tf.getList();
+    List<String> l = tf.getList();
     int size = l.size();
     Action[] actions = new Action[size];
     for (int i = 0; i < (size - 1); i++) {
-      actions[i] = new DialogText(getName(), (String) l.get(i));
+      actions[i] = new DialogText(getName(), l.get(i));
     }
-    actions[size - 1] = new PauseRequest(getName(), (String) l.get(size - 1));
+    actions[size - 1] = new PauseRequest(getName(), l.get(size - 1));
     return actions;
   }
 }

@@ -39,8 +39,8 @@ public class InfoDialog extends AbstractDialog {
 
   /** @param string */
   public Action getResponseAction() {
-    List l = _text.getList();
-    String text = (String) l.get(l.size() - 1);
+    List<String> l = _text.getList();
+    String text = l.get(l.size() - 1);
     return new PauseRequest(getName(), text);
   }
 }

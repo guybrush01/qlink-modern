@@ -110,7 +110,7 @@ public class Game {
     _game.readyToStart(_handle);
   }
 
-  public List getAbstainList() {
+  public List<SeatInfo> getAbstainList() {
     return _game.getAbstainList();
   }
 

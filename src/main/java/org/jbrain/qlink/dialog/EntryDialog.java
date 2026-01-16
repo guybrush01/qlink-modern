@@ -40,8 +40,8 @@ public class EntryDialog extends AbstractDialog {
 
   /** @param string */
   public Action getResponseAction() {
-    List l = _text.getList();
-    String text = (String) l.get(l.size() - 1);
+    List<String> l = _text.getList();
+    String text = l.get(l.size() - 1);
     switch (getDialogType()) {
       case TYPE_LOGIN:
         return new LoginDialogTextRequest(getName(), text);
@@ -54,11 +54,11 @@ public class EntryDialog extends AbstractDialog {
     TextFormatter tf = new TextFormatter();
     tf.add(string);
     tf.add("\n<PRESS F5 TO TRY AGAIN>");
-    List l = tf.getList();
+    List<String> l = tf.getList();
     int size = l.size();
     Action[] actions = new Action[size];
     for (int i = 0; i < size; i++) {
-      actions[i] = new DialogErrorText(getName(), (String) l.get(i), i + 1 == size);
+      actions[i] = new DialogErrorText(getName(), l.get(i), i + 1 == size);
     }
     return actions;
   }

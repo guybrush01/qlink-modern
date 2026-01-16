@@ -418,9 +418,9 @@ public class IRCRoomDelegate extends AbstractRoomDelegate {
       // too long, split.
       TextFormatter tf = new TextFormatter(TextFormatter.FORMAT_NONE, 97);
       tf.add(msg);
-      List l = tf.getList();
+      List<String> l = tf.getList();
       for (int i = 0; i < l.size(); i++) {
-        processEvent(new ChatEvent(this, -1, fix(handle), fix((String) l.get(i))));
+        processEvent(new ChatEvent(this, -1, fix(handle), fix(l.get(i))));
       }
     } else {
       // send anon chat to rooms.

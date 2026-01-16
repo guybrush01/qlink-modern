@@ -415,10 +415,10 @@ public class DepartmentMenu extends AbstractMenuState {
       if (clazz != null) {
         _log.debug("Found Handler: " + clazz);
         try {
-          Class c = Class.forName(clazz);
-          Class signature[] = new Class[1];
+          Class<?> c = Class.forName(clazz);
+          Class<?>[] signature = new Class<?>[1];
           signature[0] = QSession.class;
-          Constructor cons = c.getConstructor(signature);
+          Constructor<?> cons = c.getConstructor(signature);
           Object[] parms = new Object[1];
           parms[0] = _session;
           state = (QState) cons.newInstance(parms);

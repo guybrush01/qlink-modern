@@ -324,7 +324,7 @@ public class GameDelegate {
     }
   }
 
-  public List getGameLog() {
+  public List<RoomEvent> getGameLog() {
     return Collections.unmodifiableList(_vGameLog);
   }
 

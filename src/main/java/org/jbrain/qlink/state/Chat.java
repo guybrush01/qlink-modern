@@ -357,10 +357,10 @@ public class Chat extends AbstractChatState {
     tf.add(text);
     tf.add("\n     <PRESS F5 TO CONTINUE>");
     _log.info("Sending Auditorium Text");
-    List l = tf.getList();
+    List<String> l = tf.getList();
     int size = l.size();
     for (int i = 0; i < size; i++) {
-      _session.send(new AuditoriumText((String) l.get(i), i + 1 == size));
+      _session.send(new AuditoriumText(l.get(i), i + 1 == size));
     }
   }
 /** *///SKERN

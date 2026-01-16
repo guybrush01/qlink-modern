@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.*;
+import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
@@ -108,7 +109,7 @@ public class AddUserNameState extends AbstractAccountState {
   }
 
   public void activate() throws IOException {
-    List l = UserManager.getSubAccountsforUser(_session.getUserID());
+    List<AccountInfo> l = UserManager.getSubAccountsforUser(_session.getUserID());
 
     if (l.size() < 5) {
       _intState = _session.getState();

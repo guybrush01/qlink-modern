@@ -37,9 +37,9 @@ public class ObservedGame {
   public void addListener(ObservedGameEventListener listener) {
     RoomEvent event;
     synchronized (_game) {
-      List l = _game.getGameLog();
+      List<RoomEvent> l = _game.getGameLog();
       for (int i = 0, size = l.size(); i < size; i++) {
-        event = ((RoomEvent) l.get(i));
+        event = l.get(i);
         if (event instanceof GameEvent) listener.eventOccurred((GameEvent) event);
         else if (event instanceof GameCommEvent) listener.gameSent((GameCommEvent) event);
         else if (event instanceof GameTerminationEvent)
@@ -71,7 +71,7 @@ public class ObservedGame {
     _game.removeListener(listener);
   }
 
-  public List getAbstainList() {
+  public List<SeatInfo> getAbstainList() {
     return _game.getAbstainList();
   }
 

@@ -104,10 +104,10 @@ public class RoomAuditor {
     RoomManager mgr = RoomManager.getRoomManager();
 
     mgr.addEventListener(_roomMgrListener);
-    List l = mgr.getRoomList();
+    List<QRoomDelegate> l = mgr.getRoomList();
     for (int i = 0; i < l.size(); i++) {
       // add each pre-existing room to the listener.
-      room = (QRoomDelegate) l.get(i);
+      room = l.get(i);
       room.addEventListener(_roomEventListener);
       audit(room.getName(), room.isPublicRoom(), -1, "", "CREATE", "");
     }

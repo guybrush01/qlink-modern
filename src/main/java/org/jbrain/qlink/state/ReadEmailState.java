@@ -52,10 +52,10 @@ public class ReadEmailState extends AbstractState {
       _session.send(new ReadEmailAck());
       TextFormatter tf = new TextFormatter();
       tf.add(getNextEmail());
-      List l = tf.getList();
+      List<String> l = tf.getList();
       int size = l.size();
       for (int i = 0; i < size; i++) {
-        _session.send(new EmailText((String) l.get(i), EmailText.LINE_NEXT));
+        _session.send(new EmailText(l.get(i), EmailText.LINE_NEXT));
       }
       int flag = EmailText.LINE_LAST_NO_MORE_MAIL;
       if (checkEmail()) {

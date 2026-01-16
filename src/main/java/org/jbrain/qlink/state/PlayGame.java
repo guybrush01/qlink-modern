@@ -31,7 +31,15 @@ import java.util.TimerTask;
 
 import org.apache.log4j.Logger;
 import org.jbrain.qlink.*;
-import org.jbrain.qlink.chat.*;
+import org.jbrain.qlink.chat.Game;
+import org.jbrain.qlink.chat.GameEventListener;
+import org.jbrain.qlink.chat.GameCommEvent;
+import org.jbrain.qlink.chat.GameEvent;
+import org.jbrain.qlink.chat.GameTerminationEvent;
+import org.jbrain.qlink.chat.QRoom;
+import org.jbrain.qlink.chat.SeatInfo;
+import org.jbrain.qlink.chat.StartGameEvent;
+import org.jbrain.qlink.chat.UserNotInRoomException;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.user.QHandle;
 
@@ -88,7 +96,7 @@ public class PlayGame extends AbstractPhaseState {
       if (!_game.canContinue()) {
         // too much time has elapsed...
         _log.debug("Timeout occurred");
-        List l = _game.getAbstainList();
+        List<SeatInfo> l = _game.getAbstainList();
         // did some folks not respond?
         if (!l.isEmpty()) {
           // we have players not yet hooked to the game.
@@ -99,7 +107,7 @@ public class PlayGame extends AbstractPhaseState {
           }
           for (int i = 0, size = l.size(); i < size; i++) {
             // send list of un acked players.
-            info = (SeatInfo) l.get(i);
+            info = l.get(i);
             if (_log.isDebugEnabled())
               _log.debug(info.getHandle() + " did not respond to invitation.");
             _session.send(new PlayerNoResponse(info.getSeatID()));
