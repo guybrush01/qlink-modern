@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -100,7 +101,7 @@ public class HabitatConnection {
               // username:raw frame info
               for (int j = start; j < i; ++j) {
                 if (data[j] == ':') {
-                  String username = new String(data, start, j - start);
+                  String username = new String(data, start, j - start, StandardCharsets.ISO_8859_1);
                   QSession session = getQSession(username);
                   Action cmd = new ProxiedAction(data, j + 1, i - j - 1);
                   if (session != null) {

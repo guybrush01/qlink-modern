@@ -25,6 +25,7 @@ package org.jbrain.qlink.state;
 
 import java.io.*;
 import java.net.ConnectException;
+import java.nio.charset.StandardCharsets;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -126,7 +127,7 @@ public class GatewayState extends AbstractState implements Runnable {
         if (len < 0 && _bRunning) {
           exit("Server disconnected");
         } else {
-          line = new String(data, 0, len, "ISO-8859-1");
+          line = new String(data, 0, len, StandardCharsets.ISO_8859_1);
           line = line.replaceAll("\r", ESC_CR);
           line = line.replaceAll("\n", "");
           _session.send(new GatewaySend(line));

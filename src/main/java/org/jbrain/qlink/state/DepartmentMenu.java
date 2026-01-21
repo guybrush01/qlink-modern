@@ -23,32 +23,24 @@ Created on Jul 23, 2005
 */
 package org.jbrain.qlink.state;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.text.DecimalFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-
-import java.sql.*;
-import java.text.*;
-import java.util.*;
-
-
-import org.jbrain.qlink.*;
+import org.apache.log4j.Logger;
+import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
 import org.jbrain.qlink.db.dao.ArticleDAO;
 import org.jbrain.qlink.db.dao.FileDAO;
-import org.jbrain.qlink.db.dao.MessageDAO;
-import org.jbrain.qlink.db.entity.Message;
-import org.jbrain.qlink.db.entity.QFile;
 import org.jbrain.qlink.db.dao.GatewayDAO;
+import org.jbrain.qlink.db.dao.MessageDAO;
 import org.jbrain.qlink.db.dao.ReferenceHandlerDAO;
 import org.jbrain.qlink.db.dao.TocDAO;
 import org.jbrain.qlink.db.dao.VendorRoomDAO;
@@ -56,21 +48,13 @@ import org.jbrain.qlink.db.entity.Article;
 import org.jbrain.qlink.db.entity.EntryType;
 import org.jbrain.qlink.db.entity.Gateway;
 import org.jbrain.qlink.db.entity.MenuItemEntry;
-
-import org.jbrain.qlink.user.QHandle;
-
-
-
-
-
-import org.apache.log4j.Logger;
-import org.jbrain.qlink.QSession;
-import org.jbrain.qlink.cmd.action.*;
-import org.jbrain.qlink.db.DBUtils;
+import org.jbrain.qlink.db.entity.Message;
+import org.jbrain.qlink.db.entity.QFile;
 import org.jbrain.qlink.io.EscapedInputStream;
 import org.jbrain.qlink.text.TextFormatter;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.AccountUpdateException;
+import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class DepartmentMenu extends AbstractMenuState {
@@ -250,7 +234,7 @@ public class DepartmentMenu extends AbstractMenuState {
         // Get the file data and wrap in EscapedInputStream
         byte[] data = FileDAO.getInstance().getFileData(id);
         if (data != null) {
-          _is = new EscapedInputStream(new java.io.ByteArrayInputStream(data));
+          _is = new EscapedInputStream(new ByteArrayInputStream(data));
           _session.send(new InitDownload(mid, type));
         }
       }

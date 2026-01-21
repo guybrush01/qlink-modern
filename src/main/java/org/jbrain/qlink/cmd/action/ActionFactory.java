@@ -23,6 +23,8 @@ Created on Jul 18, 2005
 */
 package org.jbrain.qlink.cmd.action;
 
+import java.nio.charset.StandardCharsets;
+
 import org.jbrain.qlink.cmd.CRCException;
 import org.jbrain.qlink.cmd.Command;
 
@@ -33,7 +35,7 @@ public class ActionFactory {
     if (len < 10) {
       return null;
     }
-    String action = new String(b, start + 8, 2);
+    String action = new String(b, start + 8, 2, StandardCharsets.ISO_8859_1);
     if (action.equals(Login.MNEMONIC)) {
       return new Login(b, start, len);
     }
