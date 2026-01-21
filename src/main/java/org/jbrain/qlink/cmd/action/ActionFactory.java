@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 
 import org.jbrain.qlink.cmd.CRCException;
 import org.jbrain.qlink.cmd.Command;
+import org.jbrain.qlink.protocol.ProtocolAnalyzer;
 
 public class ActionFactory {
   public ActionFactory() {}
@@ -316,6 +317,8 @@ public class ActionFactory {
       return new HabitatAction(b, start, len);
     }
 
+    // Record this unknown action for protocol analysis
+    ProtocolAnalyzer.getInstance().recordUnknownAction(b, start, len, action);
     return new UnknownAction(b, start, len);
   }
 }

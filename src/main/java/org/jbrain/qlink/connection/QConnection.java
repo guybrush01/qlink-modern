@@ -33,6 +33,7 @@ import org.jbrain.qlink.QLinkServer;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.*;
 import org.jbrain.qlink.cmd.action.*;
+import org.jbrain.qlink.protocol.ProtocolAnalyzer;
 
 /**
  * Handles all communication to/from a Q-Link client.
@@ -177,6 +178,9 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
       if (_log.isDebugEnabled()) {
         trace("Received packet: ", data, start, length);
       }
+      // Capture inbound frame for protocol analysis
+      ProtocolAnalyzer.getInstance().captureInboundFrame(_session, data, start, length);
+
       Command cmd = factory.newInstance(data, start, length);
       if (cmd == null) {
         _log.warn("Unknown packet received");
@@ -413,7 +417,10 @@ public class QConnection extends Thread implements ConnectionTimerManager.Connec
     
     // _os.write(data);
     _os.write(d2);
-    
+
+    // Capture outbound frame for protocol analysis
+    ProtocolAnalyzer.getInstance().captureOutboundFrame(_session, d2, 0, d2.length);
+
     // _os.write(FRAME_END);
     if (_log.isDebugEnabled())
       trace("Sending packet data at sequence " + _outSequence + ": ", d2, 0, d2.length);

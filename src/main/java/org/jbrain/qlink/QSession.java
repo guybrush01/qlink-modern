@@ -37,6 +37,7 @@ import org.jbrain.qlink.cmd.action.Action;
 import org.jbrain.qlink.cmd.action.SendOLM;
 import org.jbrain.qlink.cmd.action.SendSYSOLM;
 import org.jbrain.qlink.connection.*;
+import org.jbrain.qlink.protocol.ProtocolAnalyzer;
 import org.jbrain.qlink.state.*;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
@@ -61,8 +62,11 @@ public class QSession {
       new ConnEventListener() {
         public void actionOccurred(ActionEvent event) {
           try {
-            _log.debug(_state.getName() + ": Executing " + event.getAction().getName());
-            _state.execute(event.getAction());
+            Action action = event.getAction();
+            _log.debug(_state.getName() + ": Executing " + action.getName());
+            // Capture parsed action for protocol analysis
+            ProtocolAnalyzer.getInstance().captureAction(QSession.this, action, _state);
+            _state.execute(action);
           } catch (IOException e) {
             // this means the connection died, so close down the server.
             _log.error("Link error detected, shutting down instance", e);
