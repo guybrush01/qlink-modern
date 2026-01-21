@@ -141,11 +141,11 @@ public class QLinkServer {
     return (session != null && session.canReceiveOLMs());
   }
 
-  public List getSessionList() {
+  public List<QSession> getSessionList() {
     return _vSessions;
   }
 
-  public Map getSessionMap() {
+  public Map<String, QSession> getSessionMap() {
     return _htSessions;
   }
 
@@ -296,7 +296,7 @@ public class QLinkServer {
   /** */
   public void reboot(String text) {
     _log.info("Rebooting the server");
-    if (text == null || text.length() == 0) {
+    if (text == null || text.isEmpty()) {
       SimpleDateFormat df = new SimpleDateFormat("HH:mm");
       text =
           "The system has shut down.  It will be back up at " + df.format(new Date()) + " Central.";

@@ -105,7 +105,7 @@ public class DeleteUserNameState extends AbstractState {
         _lAccounts.remove(i);
       }
     }
-    if (_lAccounts.size() != 0) {
+    if (!_lAccounts.isEmpty()) {
       _session.send(
           new MenuItem(
               0,

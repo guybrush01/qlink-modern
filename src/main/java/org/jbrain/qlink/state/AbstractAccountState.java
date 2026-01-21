@@ -134,7 +134,7 @@ public class AbstractAccountState extends AbstractPhaseState {
 
   protected boolean validateNewAccount(EntryDialog d, String handle) throws IOException {
     boolean rc = false;
-    if (handle == null || handle.length() == 0) {
+    if (handle == null || handle.isEmpty()) {
       _log.debug("Handle is null");
       _session.send(d.getErrorResponse("We're sorry, but you must select a screen name"));
     } else {

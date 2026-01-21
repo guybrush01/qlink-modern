@@ -79,7 +79,7 @@ public class ObserveGame extends AbstractState {
 
     /** */
     private void dequeue() {
-      if (v.size() != 0 && !_bSuspended) {
+      if (!v.isEmpty() && !_bSuspended) {
         Action a = v.remove(0);
         _session.send(a);
         if (a instanceof NoMoreMoves) {

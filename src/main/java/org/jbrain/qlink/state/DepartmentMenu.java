@@ -765,7 +765,7 @@ public class DepartmentMenu extends AbstractMenuState {
         _session.terminate();
       }
     }
-    if (_lRefreshAccounts != null && _lRefreshAccounts.size() != 0) {
+    if (_lRefreshAccounts != null && !_lRefreshAccounts.isEmpty()) {
       DecimalFormat format = new DecimalFormat("0000000000");
       _refreshAccount = _lRefreshAccounts.remove(0);
       String account;
