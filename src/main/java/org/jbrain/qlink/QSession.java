@@ -32,7 +32,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.cmd.action.Action;
 import org.jbrain.qlink.cmd.action.SendOLM;
 import org.jbrain.qlink.cmd.action.SendSYSOLM;
@@ -43,7 +44,7 @@ import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
 
 public class QSession {
-  private static Logger _log = Logger.getLogger(QSession.class);
+  private static Logger _log = LogManager.getLogger(QSession.class);
   // private static Hashtable _htSessions = new Hashtable();
   private QConnection _link;
   private QState _state;

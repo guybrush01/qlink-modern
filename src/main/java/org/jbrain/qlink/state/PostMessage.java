@@ -28,14 +28,15 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.MessageDAO;
 import org.jbrain.qlink.db.dao.TocDAO;
 
 public class PostMessage extends AbstractState {
-  private static Logger _log = Logger.getLogger(PostMessage.class);
+  private static Logger _log = LogManager.getLogger(PostMessage.class);
   private int _iBaseID;
   public static int _IDf;
   /**

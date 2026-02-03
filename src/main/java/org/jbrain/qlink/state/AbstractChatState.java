@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.chat.*;
 import org.jbrain.qlink.cmd.action.*;
@@ -36,7 +37,7 @@ import org.jbrain.qlink.util.QuotedStringTokenizer;
 
 public abstract class AbstractChatState extends AbstractState {
   protected static final String pad = "            ";
-  private static Logger _log = Logger.getLogger(AbstractChatState.class);
+  private static Logger _log = LogManager.getLogger(AbstractChatState.class);
   private static ChatProfile _staffProfile = new ChatProfile();
   private static ChatProfile _normalProfile = new ChatProfile();
   protected static RoomManager _mgr = RoomManager.getRoomManager();

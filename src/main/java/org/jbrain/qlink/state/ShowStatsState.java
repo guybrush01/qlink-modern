@@ -27,12 +27,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.InitDataSend;
 
 public class ShowStatsState extends AbstractMenuState {
-  private static Logger _log = Logger.getLogger(ShowStatsState.class);
+  private static Logger _log = LogManager.getLogger(ShowStatsState.class);
 
   public ShowStatsState(QSession session) {
     super(session);

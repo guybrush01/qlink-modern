@@ -27,7 +27,8 @@ import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.EmailDAO;
@@ -35,7 +36,7 @@ import org.jbrain.qlink.db.entity.Email;
 import org.jbrain.qlink.text.TextFormatter;
 
 public class ReadEmailState extends AbstractState {
-  private static Logger _log = Logger.getLogger(ReadEmailState.class);
+  private static Logger _log = LogManager.getLogger(ReadEmailState.class);
 
   /**
    * @uml.property name="_intState"

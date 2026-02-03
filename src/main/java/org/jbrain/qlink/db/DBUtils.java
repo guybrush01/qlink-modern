@@ -25,7 +25,8 @@ package org.jbrain.qlink.db;
 
 import java.sql.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.jbrain.qlink.db.dao.TocDAO;
 
@@ -36,7 +37,7 @@ import org.jbrain.qlink.db.dao.TocDAO;
  */
 @Deprecated
 public class DBUtils {
-  private static Logger _log = Logger.getLogger(DBUtils.class);
+  private static Logger _log = LogManager.getLogger(DBUtils.class);
 
   /**
    * Initializes the database connection pool.

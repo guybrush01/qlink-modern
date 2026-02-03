@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.chat.irc.simple.IRCRoomDelegate;
 import org.jbrain.qlink.user.QHandle;
 
@@ -38,7 +39,7 @@ import org.jbrain.qlink.user.QHandle;
  * so this seemed easier.  I may change it later
  */
 public class RoomManager {
-  private static Logger _log = Logger.getLogger(RoomManager.class);
+  private static Logger _log = LogManager.getLogger(RoomManager.class);
   private Map<String, QRoomDelegate> _htPublicRooms = new ConcurrentHashMap<>();
   private static Map<String, QRoomDelegate> _htPrivateRooms = new ConcurrentHashMap<>();
   private static final String ROOM_LOBBY = "Lobby";

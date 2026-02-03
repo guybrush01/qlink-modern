@@ -29,11 +29,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.user.QHandle;
 
 public class GameDelegate {
-  private static Logger _log = Logger.getLogger(GameDelegate.class);
+  private static Logger _log = LogManager.getLogger(GameDelegate.class);
   private String _sName;
   private String _sType;
   private boolean _bSystemPickOrder;

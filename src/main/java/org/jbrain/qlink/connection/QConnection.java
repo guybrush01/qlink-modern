@@ -28,7 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QLinkServer;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.*;
@@ -41,7 +42,7 @@ import org.jbrain.qlink.protocol.ProtocolAnalyzer;
  */
 public class QConnection extends Thread implements ConnectionTimerManager.ConnectionTimerCallback {
   private static final int MAX_CONSECUTIVE_ERRORS = 20;
-  private static final Logger _log = Logger.getLogger(QConnection.class);
+  private static final Logger _log = LogManager.getLogger(QConnection.class);
   public static final byte FRAME_END = 0x0d;
 
   // Sequence number constants

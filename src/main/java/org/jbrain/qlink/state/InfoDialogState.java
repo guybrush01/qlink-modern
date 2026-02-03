@@ -23,12 +23,13 @@ Created on Jul 23, 2005
 */
 package org.jbrain.qlink.state;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.dialog.*;
 
 public class InfoDialogState extends AbstractDialogState {
-  private static Logger _log = Logger.getLogger(InfoDialogState.class);
+  private static Logger _log = LogManager.getLogger(InfoDialogState.class);
 
   public InfoDialogState(QSession session, AbstractDialog dialog, DialogCallBack callback) {
     super(session, dialog, callback);

@@ -9,7 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QConfig;
 import org.jbrain.qlink.QLinkServer;
 import org.jbrain.qlink.QSession;
@@ -24,7 +25,7 @@ public class HabitatConnection {
   public static final byte FRAME_END = -70;
   public static final byte ESCAPE_BYTE = 94;
 
-  private static Logger _log = Logger.getLogger(HabitatConnection.class);
+  private static Logger _log = LogManager.getLogger(HabitatConnection.class);
   private QLinkServer _qServer;
   private String _serverHost;
   private int _serverPort;

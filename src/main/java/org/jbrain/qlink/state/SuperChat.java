@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.chat.QSeat;
 import org.jbrain.qlink.chat.RoomInfo;
@@ -40,7 +41,7 @@ import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.util.QuotedStringTokenizer;
 
 public class SuperChat extends Chat {
-  private static Logger _log = Logger.getLogger(SuperChat.class);
+  private static Logger _log = LogManager.getLogger(SuperChat.class);
   private static Map<Integer, FDOMenuHelper> _menus = new HashMap<>();
   private static final FDOItemID ID_MAIN_MENU = new FDOItemID(0x0f0000);
 

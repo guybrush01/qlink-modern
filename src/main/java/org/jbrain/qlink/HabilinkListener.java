@@ -20,7 +20,8 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.chat.ChatProfile;
 import org.jbrain.qlink.chat.Game;
 import org.jbrain.qlink.chat.QRoom;
@@ -40,7 +41,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class HabilinkListener extends Thread {
-  private static Logger _log = Logger.getLogger(HabilinkListener.class);
+  private static Logger _log = LogManager.getLogger(HabilinkListener.class);
   private int _iPort;
   private String _sAddress;
   private QLinkServer _server;

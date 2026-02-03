@@ -27,7 +27,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.chat.*;
 import org.jbrain.qlink.cmd.action.*;
@@ -40,7 +41,7 @@ import org.jbrain.qlink.util.QuotedStringTokenizer;
 
 
 public class Chat extends AbstractChatState {
-  private static Logger _log = Logger.getLogger(Chat.class);
+  private static Logger _log = LogManager.getLogger(Chat.class);
   private int _iSeat;
   private RoomInfo[] _rooms;
   private int _roomPos;

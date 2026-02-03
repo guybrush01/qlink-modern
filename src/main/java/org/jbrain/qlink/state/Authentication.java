@@ -27,7 +27,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.AccountDAO;
@@ -37,7 +38,7 @@ import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.QHandle;
 
 public class Authentication extends AbstractAccountState {
-  private static Logger _log = Logger.getLogger(Authentication.class);
+  private static Logger _log = LogManager.getLogger(Authentication.class);
   public static final int PHASE_LOGIN = 1;
   public static final int PHASE_SETUPNAME = 2;
   public static final int PHASE_DIALOGCLOSING = 3;

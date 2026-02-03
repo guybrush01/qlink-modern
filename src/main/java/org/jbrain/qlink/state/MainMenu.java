@@ -27,7 +27,8 @@ import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.BulletinDAO;
@@ -35,7 +36,7 @@ import org.jbrain.qlink.db.entity.Bulletin;
 import org.jbrain.qlink.text.TextFormatter;
 
 public class MainMenu extends AbstractState {
-  private static Logger _log = Logger.getLogger(MainMenu.class);
+  private static Logger _log = LogManager.getLogger(MainMenu.class);
   private boolean _bSuperChat = false;
 
   public MainMenu(QSession session) {

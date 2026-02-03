@@ -26,7 +26,8 @@ import java.sql.SQLException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.jbrain.qlink.QConfig;
 
@@ -35,7 +36,7 @@ import org.jbrain.qlink.QConfig;
  * Provides pooled database connections for all DAO classes.
  */
 public class ConnectionPool {
-    private static final Logger _log = Logger.getLogger(ConnectionPool.class);
+    private static final Logger _log = LogManager.getLogger(ConnectionPool.class);
 
     private static ConnectionPool _instance;
     private HikariDataSource _dataSource;

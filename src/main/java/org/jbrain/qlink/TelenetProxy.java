@@ -25,10 +25,11 @@ package org.jbrain.qlink;
 
 import java.io.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TelenetProxy {
-  private static Logger _log = Logger.getLogger(TelenetProxy.class);
+  private static Logger _log = LogManager.getLogger(TelenetProxy.class);
   private static final int STATE_CONNECT = 1;
   private static final int STATE_CONNECT2 = 2;
   private static final int STATE_CONNECT3 = 5;

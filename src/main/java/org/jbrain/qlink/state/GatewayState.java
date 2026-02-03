@@ -29,12 +29,13 @@ import java.nio.charset.StandardCharsets;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 
 public class GatewayState extends AbstractState implements Runnable {
-  private static Logger _log = Logger.getLogger(GatewayState.class);
+  private static Logger _log = LogManager.getLogger(GatewayState.class);
 
   /**
    * @uml.property name="_intState"

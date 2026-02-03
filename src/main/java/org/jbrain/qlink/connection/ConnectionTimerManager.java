@@ -23,14 +23,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.commons.configuration.Configuration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QConfig;
 
 /**
  * Manages all timers for a QConnection: ping, keepalive, and suspend watchdog.
  */
 public class ConnectionTimerManager {
-    private static final Logger _log = Logger.getLogger(ConnectionTimerManager.class);
+    private static final Logger _log = LogManager.getLogger(ConnectionTimerManager.class);
     private static final Configuration _config = QConfig.getInstance();
 
     // Timer intervals (in milliseconds)

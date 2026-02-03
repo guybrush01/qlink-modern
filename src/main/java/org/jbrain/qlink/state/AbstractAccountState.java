@@ -28,7 +28,8 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.Random;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.db.dao.AccountDAO;
 import org.jbrain.qlink.db.dao.UserDAO;
@@ -38,7 +39,7 @@ import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class AbstractAccountState extends AbstractPhaseState {
-  private static Logger _log = Logger.getLogger(AbstractAccountState.class);
+  private static Logger _log = LogManager.getLogger(AbstractAccountState.class);
   private static Random _random = new Random();
   protected String _sSecurityCode;
 

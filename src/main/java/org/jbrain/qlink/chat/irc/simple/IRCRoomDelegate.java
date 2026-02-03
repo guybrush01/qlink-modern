@@ -33,7 +33,8 @@ import java.util.Observer;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QConfig;
 import org.jbrain.qlink.chat.*;
 import org.jbrain.qlink.text.TextFormatter;
@@ -49,7 +50,7 @@ import f00f.net.irc.martyr.services.*;
 
 public class IRCRoomDelegate extends AbstractRoomDelegate {
 
-  private static Logger _log = Logger.getLogger(IRCRoomDelegate.class);
+  private static Logger _log = LogManager.getLogger(IRCRoomDelegate.class);
   private static String SERVER_HOST;
   private static int SERVER_PORT;
   private static String SERVER_NICK = "Q-Link";

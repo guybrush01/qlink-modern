@@ -26,7 +26,8 @@ package org.jbrain.qlink.extensions;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QLinkServer;
 import org.jbrain.qlink.chat.ChatEvent;
 import org.jbrain.qlink.chat.JoinEvent;
@@ -94,7 +95,7 @@ public class RoomAuditor {
         }
       };
 
-  private static Logger _log = Logger.getLogger(RoomAuditor.class);
+  private static Logger _log = LogManager.getLogger(RoomAuditor.class);
 
   /** */
   public RoomAuditor(QLinkServer server) {

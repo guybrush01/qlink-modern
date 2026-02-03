@@ -3,14 +3,15 @@ package org.jbrain.qlink;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /** Represents the global configuration for the current QLink Reloaded instance. */
 public class QConfig {
 
   public static final String DEFAULT_CONFIG_FILE = "qlink_defaults.properties";
 
-  private static Logger _log = Logger.getLogger(QConfig.class);
+  private static Logger _log = LogManager.getLogger(QConfig.class);
   private static Configuration _config = null;
 
   public static void readConfigurationFromFile(String configFileLoc) {

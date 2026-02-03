@@ -27,14 +27,15 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.EmailDAO;
 import org.jbrain.qlink.user.QHandle;
 
 public abstract class AbstractState implements QState {
-  private static Logger _log = Logger.getLogger(AbstractState.class);
+  private static Logger _log = LogManager.getLogger(AbstractState.class);
 
   /**
    * @uml.property name="_session"

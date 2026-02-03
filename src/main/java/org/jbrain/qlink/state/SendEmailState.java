@@ -27,7 +27,8 @@ import java.io.*;
 import java.sql.SQLException;
 import java.text.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.EmailDAO;
@@ -36,7 +37,7 @@ import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class SendEmailState extends AbstractState {
-	private static Logger _log=Logger.getLogger(SendEmailState.class);
+	private static Logger _log=LogManager.getLogger(SendEmailState.class);
 
 	/**
 	 * 

@@ -2,13 +2,14 @@ package org.jbrain.qlink.state;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.AbstractDialog;
 
 public abstract class AbstractDialogState extends AbstractPhaseState {
-  private static Logger _log = Logger.getLogger(AbstractDialogState.class);
+  private static Logger _log = LogManager.getLogger(AbstractDialogState.class);
   public static final int PHASE_ALLOCATE = 2;
   public static final int PHASE_RESPONSE = 3;
 

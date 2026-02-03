@@ -30,12 +30,13 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.util.QuotedStringTokenizer;
 
 public abstract class AbstractRoomDelegate implements QRoomDelegate {
-  private static Logger _log = Logger.getLogger(AbstractRoomDelegate.class);
+  private static Logger _log = LogManager.getLogger(AbstractRoomDelegate.class);
   protected static final String SYS_NAME = "System";
   private String _sName;
   protected Map<String, SeatInfo> _htUsers = new ConcurrentHashMap<>();

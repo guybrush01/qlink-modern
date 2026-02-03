@@ -23,11 +23,12 @@ Created on Jul 26, 2005
 */
 package org.jbrain.qlink.chat;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.user.QHandle;
 
 public class RoomDelegate extends AbstractRoomDelegate {
-  private static Logger _log = Logger.getLogger(RoomDelegate.class);
+  private static Logger _log = LogManager.getLogger(RoomDelegate.class);
   public static final int ROOM_CAPACITY = 23;
   protected SeatInfo[] _users = new SeatInfo[ROOM_CAPACITY];
   private GameDelegate[] _userGame = new GameDelegate[ROOM_CAPACITY];

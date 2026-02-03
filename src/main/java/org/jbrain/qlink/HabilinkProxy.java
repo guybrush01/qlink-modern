@@ -20,7 +20,8 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 
@@ -28,7 +29,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HabilinkProxy {
-  private static Logger _log = Logger.getLogger(HabilinkProxy.class);
+  private static Logger _log = LogManager.getLogger(HabilinkProxy.class);
 
   private static final Pattern USERNAME_REGEX = Pattern.compile("\"name\":\\s*\"(.*)\"");
 

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+    <Properties>
+        <Property name="logPath">./logs</Property>
+        <Property name="fileName">qlink</Property>
+        <Property name="maxFileSize">10MB</Property>
+        <Property name="maxBackupFiles">10</Property>
+        <Property name="pattern">%dISO8601} [%t] %-5level %c1.} - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${pattern}"/>
+        </Console>
+
+        <!-- File Appender with Rolling Policy -->
+        <RollingFile name="FileAppender"
+                     fileName="${logPath}/${fileName}.log"
+                     filePattern="${logPath}/${fileName}-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${maxFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxBackupFiles}"/>
+        </RollingFile>
+
+        <!-- Error File Appender -->
+        <RollingFile name="ErrorFileAppender"
+                     fileName="${logPath}/${fileName}-error.log"
+                     filePattern="${logPath}/${fileName}-error-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="${maxFileSize}"/>
+            </Policies>
+            <DefaultRolloverStrategy max="${maxBackupFiles}"/>
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Application Logger -->
+        <Logger name="org.jbrain.qlink" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="ErrorFileAppender"/>
+        </Logger>
+
+        <!-- Third-party libraries Logger -->
+        <Logger name="f00f.net.irc.martyr" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+
+        <!-- Database Logger -->
+        <Logger name="com.mysql" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+
+        <!-- Connection Pool Logger -->
+        <Logger name="com.zaxxer.hikari" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+
+        <!-- Root Logger -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

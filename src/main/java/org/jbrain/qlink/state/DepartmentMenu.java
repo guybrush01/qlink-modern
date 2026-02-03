@@ -34,7 +34,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.ArticleDAO;
@@ -58,7 +59,7 @@ import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class DepartmentMenu extends AbstractMenuState {
-  private static Logger _log = Logger.getLogger(DepartmentMenu.class);
+  private static Logger _log = LogManager.getLogger(DepartmentMenu.class);
   private InputStream _is;
   protected int _iCurrMenuID;
   protected int _iCurrMessageID;

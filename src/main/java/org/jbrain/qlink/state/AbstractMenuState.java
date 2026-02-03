@@ -26,7 +26,8 @@ package org.jbrain.qlink.state;
 import java.io.*;
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.text.TextFormatter;
@@ -117,7 +118,7 @@ class MessageEntry {
 }
 
 public abstract class AbstractMenuState extends AbstractState {
-  protected static Logger _log = Logger.getLogger(AbstractMenuState.class);
+  protected static Logger _log = LogManager.getLogger(AbstractMenuState.class);
   protected static final int RESERVED_DATA_REF_ID_MIN = 0x700000;
   protected static final int RESERVED_DATA_REF_ID_MAX = 0x7fffff;
   protected static final int RESERVED_MENU_REF_ID_MIN = 0x800000;

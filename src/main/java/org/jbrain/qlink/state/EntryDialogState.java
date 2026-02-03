@@ -25,13 +25,14 @@ package org.jbrain.qlink.state;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.*;
 
 public class EntryDialogState extends AbstractDialogState {
-  private static Logger _log = Logger.getLogger(EntryDialogState.class);
+  private static Logger _log = LogManager.getLogger(EntryDialogState.class);
   public static final int PHASE_TERMINATE = 4;
 
   public EntryDialogState(QSession session, EntryDialog dialog, DialogCallBack callback) {

@@ -35,7 +35,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.QConfig;
 import org.jbrain.qlink.QSession;
 import org.jbrain.qlink.cmd.action.Action;
@@ -47,7 +48,7 @@ import org.jbrain.qlink.state.QState;
  * Provides comprehensive traffic capture with rich context for reverse engineering.
  */
 public class ProtocolAnalyzer {
-  private static Logger _log = Logger.getLogger(ProtocolAnalyzer.class);
+  private static Logger _log = LogManager.getLogger(ProtocolAnalyzer.class);
   private static ProtocolAnalyzer _instance;
 
   private boolean _captureEnabled = false;

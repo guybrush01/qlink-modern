@@ -31,7 +31,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.db.dao.AuditoriumDAO;
 import org.jbrain.qlink.db.entity.AuditoriumTalk;
 import org.jbrain.qlink.text.TextFormatter;
@@ -58,7 +59,7 @@ class Question {
 }
 
 class AuditoriumDelegate extends RoomDelegate {
-  private static Logger _log = Logger.getLogger(AuditoriumDelegate.class);
+  private static Logger _log = LogManager.getLogger(AuditoriumDelegate.class);
   private static QHandle _qlink = new QHandle("Q-Link");
   private List<Question> _queue = Collections.synchronizedList(new ArrayList<>());
   private boolean _bAcceptingQuestions = false; //Auditorium Talk

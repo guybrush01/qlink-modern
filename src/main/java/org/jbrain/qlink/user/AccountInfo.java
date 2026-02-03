@@ -25,13 +25,14 @@ package org.jbrain.qlink.user;
 
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.db.dao.AccountDAO;
 import org.jbrain.qlink.db.dao.UserDAO;
 import org.jbrain.qlink.db.entity.User;
 
 public class AccountInfo {
-  private static Logger _log = Logger.getLogger(AccountInfo.class);
+  private static Logger _log = LogManager.getLogger(AccountInfo.class);
 
   private int _iAccountID;
   private boolean _bPrimary;

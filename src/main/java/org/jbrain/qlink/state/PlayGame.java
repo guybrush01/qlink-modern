@@ -29,7 +29,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.chat.Game;
 import org.jbrain.qlink.chat.GameEventListener;
@@ -44,7 +45,7 @@ import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.user.QHandle;
 
 public class PlayGame extends AbstractPhaseState {
-  private static Logger _log = Logger.getLogger(PlayGame.class);
+  private static Logger _log = LogManager.getLogger(PlayGame.class);
   private static Timer _timer = new Timer();
 
   /**

@@ -27,14 +27,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.chat.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.user.QHandle;
 
 public class ObserveGame extends AbstractState {
-  private static Logger _log = Logger.getLogger(ObserveGame.class);
+  private static Logger _log = LogManager.getLogger(ObserveGame.class);
   private QState _intState;
   private QRoom _room;
   private ObservedGame _game;

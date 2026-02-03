@@ -26,7 +26,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Abstract base class for all DAO implementations.
@@ -36,7 +37,7 @@ public abstract class BaseDAO {
     protected final Logger _log;
 
     protected BaseDAO() {
-        _log = Logger.getLogger(getClass());
+        _log = LogManager.getLogger(getClass());
     }
 
     /**

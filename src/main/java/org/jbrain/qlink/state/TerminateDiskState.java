@@ -26,7 +26,8 @@ package org.jbrain.qlink.state;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.*;
@@ -36,7 +37,7 @@ import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class TerminateDiskState extends AbstractState {
-  private static Logger _log = Logger.getLogger(TerminateDiskState.class);
+  private static Logger _log = LogManager.getLogger(TerminateDiskState.class);
   private EntryDialog _termDiskDialog;
 
   private DialogCallBack _termDiskCallBack =

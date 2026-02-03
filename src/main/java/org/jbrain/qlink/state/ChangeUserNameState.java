@@ -26,14 +26,15 @@ package org.jbrain.qlink.state;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.UserManager;
 
 public class ChangeUserNameState extends AbstractState {
-  private static Logger _log = Logger.getLogger(ChangeUserNameState.class);
+  private static Logger _log = LogManager.getLogger(ChangeUserNameState.class);
   public static final int PHASE_INITIAL = 1;
   private List<AccountInfo> _lAccounts;
   private QState _intState;

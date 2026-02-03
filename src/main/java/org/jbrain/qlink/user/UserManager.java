@@ -27,13 +27,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.db.dao.AccountDAO;
 import org.jbrain.qlink.db.dao.UserDAO;
 import org.jbrain.qlink.db.entity.Account;
 
 public class UserManager {
-  private static Logger _log = Logger.getLogger(UserManager.class);
+  private static Logger _log = LogManager.getLogger(UserManager.class);
 
   public static List<AccountInfo> getAccountsforUser(int id) {
     List<AccountInfo> l = new ArrayList<>();

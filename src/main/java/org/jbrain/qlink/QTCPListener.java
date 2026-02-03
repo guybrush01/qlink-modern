@@ -27,11 +27,12 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.connection.QConnection;
 
 public class QTCPListener extends Thread {
-  private static Logger _log = Logger.getLogger(QTCPListener.class);
+  private static Logger _log = LogManager.getLogger(QTCPListener.class);
   private int _iPort;
   private String _sAddress;
   private QLinkServer _server;

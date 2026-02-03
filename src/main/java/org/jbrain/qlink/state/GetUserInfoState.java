@@ -25,14 +25,15 @@ package org.jbrain.qlink.state;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.*;
 import org.jbrain.qlink.user.UserManager;
 
 public class GetUserInfoState extends AbstractState {
-  private static Logger _log = Logger.getLogger(GetUserInfoState.class);
+  private static Logger _log = LogManager.getLogger(GetUserInfoState.class);
   private static EntryDialog _nameDialog;
   private static EntryDialog _cityDialog;
   private static EntryDialog _stateDialog;

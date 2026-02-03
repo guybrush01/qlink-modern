@@ -25,6 +25,7 @@ package org.jbrain.qlink;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -41,11 +42,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jbrain.qlink.util.ExceptionHandler;
 import org.jbrain.qlink.cmd.action.Action;
 import org.jbrain.qlink.cmd.action.Toss;
 import org.jbrain.qlink.db.DBUtils;
 import org.jbrain.qlink.extensions.RoomAuditor;
+import org.jbrain.qlink.protocol.ProtocolAnalyzer;
 import org.jbrain.qlink.user.QHandle;
 
 public class QLinkServer {
@@ -56,7 +60,7 @@ public class QLinkServer {
   public static final int DEFAULT_HABILINK_PORT = 1986;//skern
   public static final String DEFAULT_HABILINK_HOST = "0.0.0.0";
 
-  private static Logger _log = Logger.getLogger(QLinkServer.class);
+  private static Logger _log = LogManager.getLogger(QLinkServer.class);
   private static PropertiesConfiguration _config = null;
   private List<QSession> _vSessions = new CopyOnWriteArrayList<>();
   private Map<String, QSession> _htSessions = new ConcurrentHashMap<>();
@@ -69,54 +73,86 @@ public class QLinkServer {
       new SessionEventListener() {
 
         public void userNameChanged(UserNameChangeEvent event) {
-          if (event.getOldHandle() != null) {
-            // we are changing names...
-            _log.info(
-                "Changing online user from '"
-                    + event.getOldHandle()
-                    + "' to '"
-                    + event.getNewHandle()
-                    + "' in online user list");
-          } else {
-            _log.info("Adding '" + event.getNewHandle() + "' to online user list");
+          try {
+            if (event.getOldHandle() != null) {
+              // we are changing names...
+              _log.info(
+                  "Changing online user from '"
+                      + event.getOldHandle()
+                      + "' to '"
+                      + event.getNewHandle()
+                      + "' in online user list");
+            } else {
+              _log.info("Adding '" + event.getNewHandle() + "' to online user list");
+            }
+            changeUserName(event.getSession(), event.getOldHandle(), event.getNewHandle());
+          } catch (Exception e) {
+            ExceptionHandler.handleProtocolException(e, "userNameChanged event");
           }
-          changeUserName(event.getSession(), event.getOldHandle(), event.getNewHandle());
         }
 
         public void stateChanged(StateChangeEvent event) {}
 
         public void sessionTerminated(TerminationEvent event) {
-          removeSession(event.getSession());
+          try {
+            removeSession(event.getSession());
+          } catch (Exception e) {
+            ExceptionHandler.handleProtocolException(e, "sessionTerminated event");
+          }
         }
       };
   /** @param session */
   public void addSession(QSession session) {
-    if (!_vSessions.contains(session) && session.getHandle() != null && session.getHandle().getKey() != null) {
-      _log.info("Adding session to session list: " + session.getHandle().getKey());
-      _vSessions.add(session);
-      _newest = new Date();
-      _iSessionCount++;
-      session.addEventListener(_listener);
-    }
-    if (session != null
-        && session.getHandle() != null
-        && !_htSessions.containsKey(session.getHandle().getKey())) {
-      _log.info("Adding session to session map: " + session.getHandle().getKey());
-      _htSessions.put(session.getHandle().getKey(), session);
+    try {
+      if (session == null) {
+        _log.warn("Attempted to add null session");
+        return;
+      }
+
+      if (!_vSessions.contains(session) && session.getHandle() != null && session.getHandle().getKey() != null) {
+        // Validate session handle
+        if (!org.jbrain.qlink.util.SecurityUtils.isValidHandle(session.getHandle().getKey())) {
+          _log.warn("Attempted to add session with invalid handle: " + session.getHandle().getKey());
+          return;
+        }
+
+        _log.info("Adding session to session list: " + session.getHandle().getKey());
+        _vSessions.add(session);
+        _newest = new Date();
+        _iSessionCount++;
+        session.addEventListener(_listener);
+      }
+
+      if (session.getHandle() != null && !_htSessions.containsKey(session.getHandle().getKey())) {
+        _log.info("Adding session to session map: " + session.getHandle().getKey());
+        _htSessions.put(session.getHandle().getKey(), session);
+      }
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "addSession");
     }
   }
 
   /** @param session */
   public void removeSession(QSession session) {
-    _log.info("Removing session from session list: " + session.getHandle().getKey());
-    if (session.getHandle() != null) {
-      _log.info("Removing '" + session.getHandle() + "' from online user list");
-      _htSessions.remove(session.getHandle().getKey());
-    } else {
-      _iErrorCount++;
+    try {
+      if (session == null) {
+        _log.warn("Attempted to remove null session");
+        return;
+      }
+
+      _log.info("Removing session from session list: " + session.getHandle().getKey());
+      if (session.getHandle() != null) {
+        _log.info("Removing '" + session.getHandle() + "' from online user list");
+        _htSessions.remove(session.getHandle().getKey());
+      } else {
+        _log.warn("Session has null handle during removal");
+        _iErrorCount++;
+      }
+      _vSessions.remove(session);
+      session.removeEventListener(_listener);
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "removeSession");
     }
-    _vSessions.remove(session);
-    session.removeEventListener(_listener);
   }
 
   /** @param msg */
@@ -126,19 +162,40 @@ public class QLinkServer {
     }
   }
 
-  /** @param name */
+  /** @param handle */
   public boolean killSession(QHandle handle) {
-    QSession s = getSession(handle);
-    if (s != null) {
-      s.terminate();
-      return true;
+    try {
+      if (handle == null || !org.jbrain.qlink.util.SecurityUtils.isValidHandle(handle.getKey())) {
+        _log.warn("Attempted to kill session with invalid handle: " + (handle != null ? handle.getKey() : "null"));
+        return false;
+      }
+
+      QSession s = getSession(handle);
+      if (s != null) {
+        _log.info("Killing session for handle: " + handle.getKey());
+        s.terminate();
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "killSession");
+      return false;
     }
-    return false;
   }
 
   public boolean canReceiveOLMs(QHandle handle) {
-    QSession session = getSession(handle);
-    return (session != null && session.canReceiveOLMs());
+    try {
+      if (handle == null || !org.jbrain.qlink.util.SecurityUtils.isValidHandle(handle.getKey())) {
+        _log.warn("Attempted to check OLM capability with invalid handle: " + (handle != null ? handle.getKey() : "null"));
+        return false;
+      }
+
+      QSession session = getSession(handle);
+      return (session != null && session.canReceiveOLMs());
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "canReceiveOLMs");
+      return false;
+    }
   }
 
   public List<QSession> getSessionList() {
@@ -179,16 +236,40 @@ public class QLinkServer {
   }
 
   public boolean sendToUser(QHandle handle, Action a) {
-    QSession s = getSession(handle);
-    _log.debug("Attempting to send action to another user: " + handle);
-    if (s != null) {
-      return s.send(a);
+    try {
+      if (handle == null || !org.jbrain.qlink.util.SecurityUtils.isValidHandle(handle.getKey())) {
+        _log.warn("Attempted to send action to invalid handle: " + (handle != null ? handle.getKey() : "null"));
+        return false;
+      }
+
+      if (a == null) {
+        _log.warn("Attempted to send null action to handle: " + handle.getKey());
+        return false;
+      }
+
+      QSession s = getSession(handle);
+      _log.debug("Attempting to send action to another user: " + handle);
+      if (s != null) {
+        return s.send(a);
+      }
+      return false;
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "sendToUser");
+      return false;
     }
-    return false;
   }
 
   private QSession getSession(QHandle handle) {
-    return _htSessions.get(handle.getKey());
+    try {
+      if (handle == null || !org.jbrain.qlink.util.SecurityUtils.isValidHandle(handle.getKey())) {
+        _log.warn("Attempted to get session with invalid handle: " + (handle != null ? handle.getKey() : "null"));
+        return null;
+      }
+      return _htSessions.get(handle.getKey());
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "getSession");
+      return null;
+    }
   }
 
   /**
@@ -197,8 +278,24 @@ public class QLinkServer {
    * @param handle
    */
   private void changeUserName(QSession session, QHandle oldHandle, QHandle handle) {
-    if (oldHandle != null) _htSessions.remove(oldHandle.getKey());
-    _htSessions.put(handle.getKey(), session);
+    try {
+      if (session == null) {
+        _log.warn("Attempted to change username on null session");
+        return;
+      }
+
+      if (handle == null || !org.jbrain.qlink.util.SecurityUtils.isValidHandle(handle.getKey())) {
+        _log.warn("Attempted to change username to invalid handle: " + (handle != null ? handle.getKey() : "null"));
+        return;
+      }
+
+      if (oldHandle != null) {
+        _htSessions.remove(oldHandle.getKey());
+      }
+      _htSessions.put(handle.getKey(), session);
+    } catch (Exception e) {
+      ExceptionHandler.handleProtocolException(e, "changeUserName");
+    }
   }
 
   /** @param args */
@@ -209,36 +306,84 @@ public class QLinkServer {
       DBUtils.init();
     } catch (Exception e) {
       _log.fatal("Could not initialize DB", e);
+      ExceptionHandler.handleDatabaseException((SQLException) e, "DB initialization");
       System.exit(-1);
     }
 
     // Creates the QTCP QuantumLink-over-TCP protocol listener.
     int qctpPort = DEFAULT_QTCP_PORT;
     if (args.getOptionValue("qtcpPort") != null) {
-      qctpPort = Integer.parseInt(args.getOptionValue("qtcpPort"));
+      try {
+        qctpPort = Integer.parseInt(args.getOptionValue("qtcpPort"));
+        if (qctpPort <= 0 || qctpPort > 65535) {
+          _log.warn("Invalid QTCP port specified, using default: " + DEFAULT_QTCP_PORT);
+          qctpPort = DEFAULT_QTCP_PORT;
+        }
+      } catch (NumberFormatException e) {
+        _log.warn("Invalid QTCP port format, using default: " + DEFAULT_QTCP_PORT);
+        qctpPort = DEFAULT_QTCP_PORT;
+      }
     }
+
     String qctpHost = DEFAULT_QTCP_HOST;
     if (args.getOptionValue("qtcpHost") != null) {
       qctpHost = args.getOptionValue("qtcpHost");
+      // Basic validation for host format
+      if (!qctpHost.matches("^(\\d1,3}\\.\\d1,3}\\.\\d1,3}\\.\\d1,3}|localhost|[^\\s]+)$")) {
+        _log.warn("Invalid QTCP host format, using default: " + DEFAULT_QTCP_HOST);
+        qctpHost = DEFAULT_QTCP_HOST;
+      }
     }
+
     _log.info("QTCP protocol listening on " + qctpHost + ":" + qctpPort);
-    new QTCPListener(this, qctpHost, qctpPort);
+    try {
+      new QTCPListener(this, qctpHost, qctpPort);
+    } catch (Exception e) {
+      _log.error("Failed to start QTCP listener", e);
+      ExceptionHandler.handleRuntimeException((RuntimeException) e, "QTCP listener startup");
+    }
 
     // Creates the Habilink protocol listener.
     int habilinkPort = DEFAULT_HABILINK_PORT;
     if (args.getOptionValue("habilinkPort") != null) {
-      habilinkPort = Integer.parseInt(args.getOptionValue("habilinkPort"));
+      try {
+        habilinkPort = Integer.parseInt(args.getOptionValue("habilinkPort"));
+        if (habilinkPort <= 0 || habilinkPort > 65535) {
+          _log.warn("Invalid Habilink port specified, using default: " + DEFAULT_HABILINK_PORT);
+          habilinkPort = DEFAULT_HABILINK_PORT;
+        }
+      } catch (NumberFormatException e) {
+        _log.warn("Invalid Habilink port format, using default: " + DEFAULT_HABILINK_PORT);
+        habilinkPort = DEFAULT_HABILINK_PORT;
+      }
     }
+
     String habilinkHost = DEFAULT_HABILINK_HOST;
     if (args.getOptionValue("habilinkHost") != null) {
       habilinkHost = args.getOptionValue("habilinkHost");
+      // Basic validation for host format
+      if (!habilinkHost.matches("^(\\d1,3}\\.\\d1,3}\\.\\d1,3}\\.\\d1,3}|localhost|[^\\s]+)$")) {
+        _log.warn("Invalid Habilink host format, using default: " + DEFAULT_HABILINK_HOST);
+        habilinkHost = DEFAULT_HABILINK_HOST;
+      }
     }
+
     _log.info("Habilink protocol listening on " + habilinkHost + ":" + habilinkPort);
-    new HabilinkListener(this, habilinkHost, habilinkPort);
+    try {
+      new HabilinkListener(this, habilinkHost, habilinkPort);
+    } catch (Exception e) {
+      _log.error("Failed to start Habilink listener", e);
+      ExceptionHandler.handleRuntimeException((RuntimeException) e, "Habilink listener startup");
+    }
 
     // at this point, we should load the extensions...
     // TODO make extensions flexible.
-    new RoomAuditor(this);
+    try {
+      new RoomAuditor(this);
+    } catch (Exception e) {
+      _log.error("Failed to initialize RoomAuditor extension", e);
+      ExceptionHandler.handleRuntimeException((RuntimeException) e, "RoomAuditor initialization");
+    }
   }
 
   private static CommandLine parseArgs(String[] args) {
@@ -295,17 +440,37 @@ public class QLinkServer {
 
   /** */
   public void reboot(String text) {
-    _log.info("Rebooting the server");
-    if (text == null || text.isEmpty()) {
-      SimpleDateFormat df = new SimpleDateFormat("HH:mm");
-      text =
-          "The system has shut down.  It will be back up at " + df.format(new Date()) + " Central.";
+    try {
+      _log.info("Rebooting the server");
+      if (text == null || text.isEmpty()) {
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm");
+        text =
+            "The system has shut down.  It will be back up at " + df.format(new Date()) + " Central.";
+      }
+
+      // Sanitize the reboot message
+      String safeText = org.jbrain.qlink.util.SecurityUtils.sanitizeMessage(text);
+      if (safeText == null) {
+        _log.warn("Reboot message contained unsafe content, using default");
+        safeText = "System rebooting. Please reconnect shortly.";
+      }
+
+      for (QSession session : _htSessions.values()) {
+        try {
+          session.send(new Toss(safeText));
+        } catch (Exception e) {
+          _log.warn("Failed to send reboot message to session: " + session.getHandle(), e);
+          ExceptionHandler.handleRuntimeException((RuntimeException) e, "send reboot message");
+        }
+      }
+
+      _log.info("Exitting the server to launch again");
+      System.exit(0);
+    } catch (Exception e) {
+      _log.fatal("Critical error during reboot", e);
+      ExceptionHandler.handleRuntimeException((RuntimeException) e, "reboot");
+      System.exit(1);
     }
-    for (QSession session : _htSessions.values()) {
-      session.send(new Toss(text));
-    }
-    _log.info("Exitting the server to launch again");
-    System.exit(0);
   }
 
   public static void main(String[] args) {
@@ -318,6 +483,10 @@ public class QLinkServer {
     } else {
       QConfig.readDefaultConfiguration();
     }
+
+    // Enable protocol capture
+    ProtocolAnalyzer.getInstance().startCaptureUnknownsOnly();
+
     // Initializes the QLink server.
     new QLinkServer().launch(parsedArgs);
   }
