@@ -24,8 +24,6 @@ Created on Jul 23, 2005
 package org.jbrain.qlink.state;
 
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +31,6 @@ import org.jbrain.qlink.*;
 import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.dialog.*;
 import org.jbrain.qlink.user.QHandle;
-import org.jbrain.qlink.user.UserManager;
 
 public class TestState extends AbstractAccountState {
   private static Logger _log = LogManager.getLogger(AddUserNameState.class);

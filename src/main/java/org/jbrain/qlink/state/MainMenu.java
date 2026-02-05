@@ -26,6 +26,7 @@ package org.jbrain.qlink.state;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +35,11 @@ import org.jbrain.qlink.cmd.action.*;
 import org.jbrain.qlink.db.dao.BulletinDAO;
 import org.jbrain.qlink.db.entity.Bulletin;
 import org.jbrain.qlink.text.TextFormatter;
+import org.jbrain.qlink.protocol.ProtocolAnalyzer;
+import org.jbrain.qlink.protocol.UnknownActionRepository;
+import org.jbrain.qlink.protocol.ProtocolDecoder;
+import org.jbrain.qlink.protocol.UnknownActionRecord;
+import org.jbrain.qlink.protocol.FrameInfo;
 
 public class MainMenu extends AbstractState {
   private static Logger _log = LogManager.getLogger(MainMenu.class);
@@ -113,8 +119,121 @@ public class MainMenu extends AbstractState {
     } else if (a instanceof EnterSuperChat) {
       _bSuperChat = true;
       rc = true;
+    } else if (a instanceof ProtocolCommand) {
+      handleProtocolCommand((ProtocolCommand) a);
+      rc = true;
     }
     if (!rc) rc = super.execute(a);
     return rc;
+  }
+
+  /**
+   * Handle protocol analysis admin commands.
+   * Only available to staff users.
+   */
+  private void handleProtocolCommand(ProtocolCommand cmd) throws IOException {
+    // Check if user is staff
+    if (!_session.isStaff()) {
+      _session.sendSYSOLM("Access denied: Protocol commands require staff privileges");
+      return;
+    }
+
+    String command = cmd.getCommandName();
+    String parameter = cmd.getParameter();
+
+    try {
+      switch (command) {
+        case "CAPTURE":
+          handleCaptureCommand(parameter);
+          break;
+        case "UNKNOWN":
+          handleUnknownCommand(parameter);
+          break;
+        case "DECODE":
+          handleDecodeCommand(parameter);
+          break;
+        case "STATUS":
+          handleStatusCommand();
+          break;
+        case "REPLAY":
+          handleReplayCommand(parameter);
+          break;
+        default:
+          sendHelp();
+          break;
+      }
+    } catch (Exception e) {
+      _session.sendSYSOLM("Error executing command: " + e.getMessage());
+    }
+  }
+
+  private void handleCaptureCommand(String param) throws IOException {
+    if ("START".equalsIgnoreCase(param)) {
+      ProtocolAnalyzer.getInstance().startCapture();
+      _session.sendSYSOLM("Protocol capture started");
+    } else if ("STOP".equalsIgnoreCase(param)) {
+      ProtocolAnalyzer.getInstance().stopCapture();
+      _session.sendSYSOLM("Protocol capture stopped");
+    } else if ("UNKNOWNS".equalsIgnoreCase(param)) {
+      ProtocolAnalyzer.getInstance().startCaptureUnknownsOnly();
+      _session.sendSYSOLM("Protocol capture started (unknowns only)");
+    } else {
+      _session.sendSYSOLM("Usage: /protocol capture [start|stop|unknowns]");
+    }
+  }
+
+  private void handleUnknownCommand(String param) throws IOException {
+    if ("LIST".equalsIgnoreCase(param)) {
+      List<UnknownActionRecord> records = UnknownActionRepository.getInstance().getAllUnknownRecords();
+      if (records.isEmpty()) {
+        _session.sendSYSOLM("No unknown actions found");
+      } else {
+        _session.sendSYSOLM("Found " + records.size() + " unknown actions");
+        // Show top mnemonics
+        Map<String, Integer> freq = ProtocolAnalyzer.getInstance().getUnknownMnemonicCounts();
+        for (Map.Entry<String, Integer> entry : freq.entrySet()) {
+          _session.sendSYSOLM("  " + entry.getKey() + " (" + entry.getValue() + ")");
+        }
+      }
+    } else {
+      _session.sendSYSOLM("Usage: /protocol unknowns list");
+    }
+  }
+
+  private void handleDecodeCommand(String param) throws IOException {
+    if (param == null || param.trim().isEmpty()) {
+      _session.sendSYSOLM("Usage: /protocol decode <hex_data>");
+      return;
+    }
+
+    try {
+      byte[] data = ProtocolDecoder.hexToBytes(param.trim());
+      FrameInfo info = ProtocolDecoder.decodeFrame(data);
+      _session.sendSYSOLM("Frame decode result:");
+      _session.sendSYSOLM(info.toString());
+    } catch (Exception e) {
+      _session.sendSYSOLM("Decode error: " + e.getMessage());
+    }
+  }
+
+  private void handleStatusCommand() throws IOException {
+    String status = ProtocolAnalyzer.getInstance().getStatus();
+    _session.sendSYSOLM(status);
+  }
+
+  private void handleReplayCommand(String param) throws IOException {
+    _session.sendSYSOLM("Replay functionality not yet implemented");
+    // Future feature: replay captured frames
+  }
+
+  private void sendHelp() throws IOException {
+    _session.sendSYSOLM("Protocol Analysis Commands:");
+    _session.sendSYSOLM("  /protocol capture start     - Start capturing all traffic");
+    _session.sendSYSOLM("  /protocol capture stop      - Stop capturing");
+    _session.sendSYSOLM("  /protocol capture unknowns  - Start capturing unknowns only");
+    _session.sendSYSOLM("  /protocol unknowns list     - List unknown actions");
+    _session.sendSYSOLM("  /protocol decode <hex>      - Decode hex frame");
+    _session.sendSYSOLM("  /protocol status            - Show analyzer status");
+    _session.sendSYSOLM("  /protocol replay <id>       - Replay captured message");
   }
 }

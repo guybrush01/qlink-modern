@@ -28,7 +28,6 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,6 +201,26 @@ public class ProtocolAnalyzer {
   public void recordUnknownAction(byte[] data, int start, int len, String mnemonic) {
     // Always track unknown mnemonics, even if capture is disabled
     _unknownMnemonicCounts.computeIfAbsent(mnemonic, k -> new AtomicInteger()).incrementAndGet();
+
+    // Also record to database if repository is enabled
+    UnknownActionRepository repo = UnknownActionRepository.getInstance();
+    if (repo.isEnabled()) {
+      // Extract metadata from the current context if available
+      // For now, we'll record with basic info - session context would need to be passed
+      try {
+        String rawHex = ProtocolDecoder.bytesToHex(data, start, len);
+        String payloadHex = null;
+        if (len > 10) {
+          payloadHex = ProtocolDecoder.bytesToHex(data, start + 10, len - 10);
+        }
+
+        // This is a simplified recording - in a real implementation,
+        // we'd want to pass session and state context
+        repo.recordDirect(mnemonic, rawHex, payloadHex);
+      } catch (Exception e) {
+        _log.warn("Failed to record unknown action to repository", e);
+      }
+    }
 
     if (!_captureEnabled) return;
 

@@ -55,7 +55,6 @@ import org.jbrain.qlink.io.EscapedInputStream;
 import org.jbrain.qlink.text.TextFormatter;
 import org.jbrain.qlink.user.AccountInfo;
 import org.jbrain.qlink.user.AccountUpdateException;
-import org.jbrain.qlink.user.QHandle;
 import org.jbrain.qlink.user.UserManager;
 
 public class DepartmentMenu extends AbstractMenuState {

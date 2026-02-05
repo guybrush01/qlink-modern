@@ -22,13 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jbrain.qlink.chat.ChatProfile;
-import org.jbrain.qlink.chat.Game;
-import org.jbrain.qlink.chat.QRoom;
-import org.jbrain.qlink.chat.RoomManager;
 import org.jbrain.qlink.connection.QConnection;
-import org.jbrain.qlink.state.PlayGame;
-import org.jbrain.qlink.state.QState;
 import org.jbrain.qlink.user.QHandle;
 
 import java.io.IOException;

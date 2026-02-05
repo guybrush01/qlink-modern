@@ -61,6 +61,26 @@ public class ProtocolDecoder {
   }
 
   /**
+   * Convert bytes to hex string without spaces.
+   */
+  public static String bytesToHex(byte[] data) {
+    if (data == null) return "";
+    return bytesToHex(data, 0, data.length);
+  }
+
+  /**
+   * Convert bytes to hex string without spaces.
+   */
+  public static String bytesToHex(byte[] data, int offset, int length) {
+    if (data == null || length <= 0) return "";
+    StringBuilder sb = new StringBuilder(length * 2);
+    for (int i = 0; i < length && offset + i < data.length; i++) {
+      sb.append(String.format("%02X", data[offset + i] & 0xFF));
+    }
+    return sb.toString();
+  }
+
+  /**
    * Convert bytes to hex string with spaces.
    */
   public static String hexDump(byte[] data, int offset, int length) {

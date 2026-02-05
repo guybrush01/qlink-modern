@@ -22,7 +22,6 @@ package org.jbrain.qlink.db.dao;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jbrain.qlink.db.BaseDAO;

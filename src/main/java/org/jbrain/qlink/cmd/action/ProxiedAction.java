@@ -1,7 +1,5 @@
 package org.jbrain.qlink.cmd.action;
 
-import java.io.UnsupportedEncodingException;
-
 import org.jbrain.qlink.cmd.CRCException;
 
 /* ProxiedActions are payloads received from external sources. This

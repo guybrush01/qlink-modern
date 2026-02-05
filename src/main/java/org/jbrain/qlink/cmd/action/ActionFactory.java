@@ -316,6 +316,9 @@ public class ActionFactory {
     if (action.startsWith(HabitatAction.MNEMONIC)) {
       return new HabitatAction(b, start, len);
     }
+    if (action.equals(ProtocolCommand.MNEMONIC)) {
+      return new ProtocolCommand(b, start, len);
+    }
 
     // Record this unknown action for protocol analysis
     ProtocolAnalyzer.getInstance().recordUnknownAction(b, start, len, action);
