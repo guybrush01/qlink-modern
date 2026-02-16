@@ -108,15 +108,16 @@ public abstract class BaseDAO {
      */
     protected <T> java.util.List<T> queryForList(String sql, ResultSetMapper<T> mapper, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             setParameters(stmt, params);
             _log.debug("Executing query: " + sql);
-            java.util.List<T> results = new java.util.ArrayList<T>();
-            while (rs.next()) {
-                results.add(mapper.map(rs));
+            try (ResultSet rs = stmt.executeQuery()) {
+                java.util.List<T> results = new java.util.ArrayList<T>();
+                while (rs.next()) {
+                    results.add(mapper.map(rs));
+                }
+                return results;
             }
-            return results;
         }
     }
 
@@ -155,12 +156,13 @@ public abstract class BaseDAO {
      */
     protected int queryForInt(String sql, Object... params) throws SQLException {
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             setParameters(stmt, params);
             _log.debug("Executing query: " + sql);
-            if (rs.next()) {
-                return rs.getInt(1);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
             return 0;
         }
