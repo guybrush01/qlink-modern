@@ -62,8 +62,10 @@ public class RoomLogDAO extends BaseDAO {
      */
     public int logEvent(String room, boolean publicInd, int seat, String handle, String action, String text) throws SQLException {
         return executeUpdate(
-            "INSERT INTO room_log (room, public_ind, seat, handle, action, text, timestamp) " +
-            "VALUES (?, ?, ?, ?, ?, ?, NOW())",
+            """
+            INSERT INTO room_log (room, public_ind, seat, handle, action, text, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+            """,
             room,
             publicInd,
             seat,
@@ -78,8 +80,10 @@ public class RoomLogDAO extends BaseDAO {
      */
     public int logEvent(RoomLogEntry entry) throws SQLException {
         return executeUpdate(
-            "INSERT INTO room_log (room, public_ind, seat, handle, action, text, timestamp) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO room_log (room, public_ind, seat, handle, action, text, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
             entry.getRoom(),
             entry.isPublicInd(),
             entry.getSeat(),
@@ -95,7 +99,9 @@ public class RoomLogDAO extends BaseDAO {
      */
     public List<RoomLogEntry> findByRoom(String room) throws SQLException {
         return queryForList(
-            "SELECT * FROM room_log WHERE room = ? ORDER BY timestamp DESC",
+            """
+            SELECT * FROM room_log WHERE room = ? ORDER BY timestamp DESC
+            """,
             ROOM_LOG_MAPPER,
             room
         );

@@ -64,7 +64,9 @@ public class MessageDAO extends BaseDAO {
      */
     public Message findById(int messageId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM messages WHERE message_id = ?",
+            """
+            SELECT * FROM messages WHERE message_id = ?
+            """,
             MESSAGE_MAPPER,
             messageId
         );
@@ -75,7 +77,9 @@ public class MessageDAO extends BaseDAO {
      */
     public List<Message> findByReferenceId(int referenceId) throws SQLException {
         return queryForList(
-            "SELECT * FROM messages WHERE reference_id = ? ORDER BY date DESC",
+            """
+            SELECT * FROM messages WHERE reference_id = ? ORDER BY date DESC
+            """,
             MESSAGE_MAPPER,
             referenceId
         );
@@ -86,7 +90,9 @@ public class MessageDAO extends BaseDAO {
      */
     public List<Message> findByBaseId(int baseId) throws SQLException {
         return queryForList(
-            "SELECT * FROM messages WHERE base_id = ? ORDER BY date DESC",
+            """
+            SELECT * FROM messages WHERE base_id = ? ORDER BY date DESC
+            """,
             MESSAGE_MAPPER,
             baseId
         );
@@ -97,7 +103,9 @@ public class MessageDAO extends BaseDAO {
      */
     public List<Message> findReplies(int parentId) throws SQLException {
         return queryForList(
-            "SELECT * FROM messages WHERE parent_id = ? ORDER BY date",
+            """
+            SELECT * FROM messages WHERE parent_id = ? ORDER BY date
+            """,
             MESSAGE_MAPPER,
             parentId
         );
@@ -109,8 +117,10 @@ public class MessageDAO extends BaseDAO {
      */
     public int create(Message message) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO messages (reference_id, parent_id, base_id, title, author, date, replies, text) " +
-            "VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)",
+            """
+            INSERT INTO messages (reference_id, parent_id, base_id, title, author, date, replies, text)
+            VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)
+            """,
             message.getReferenceId(),
             message.getParentId(),
             message.getBaseId(),
@@ -127,8 +137,10 @@ public class MessageDAO extends BaseDAO {
      */
     public int create(int referenceId, int parentId, int baseId, String title, String author, String text) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO messages (reference_id, parent_id, base_id, title, author, date, replies, text) " +
-            "VALUES (?, ?, ?, ?, ?, NOW(), 0, ?)",
+            """
+            INSERT INTO messages (reference_id, parent_id, base_id, title, author, date, replies, text)
+            VALUES (?, ?, ?, ?, ?, NOW(), 0, ?)
+            """,
             referenceId,
             parentId,
             baseId,
@@ -143,7 +155,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int incrementReplies(int messageId) throws SQLException {
         return executeUpdate(
-            "UPDATE messages SET replies = replies + 1 WHERE message_id = ?",
+            """
+            UPDATE messages SET replies = replies + 1 WHERE message_id = ?
+            """,
             messageId
         );
     }
@@ -153,7 +167,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int incrementRepliesByReferenceId(int referenceId) throws SQLException {
         return executeUpdate(
-            "UPDATE messages SET replies = replies + 1 WHERE reference_id = ?",
+            """
+            UPDATE messages SET replies = replies + 1 WHERE reference_id = ?
+            """,
             referenceId
         );
     }
@@ -163,7 +179,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int updateText(int messageId, String text) throws SQLException {
         return executeUpdate(
-            "UPDATE messages SET text = ? WHERE message_id = ?",
+            """
+            UPDATE messages SET text = ? WHERE message_id = ?
+            """,
             text, messageId
         );
     }
@@ -172,7 +190,12 @@ public class MessageDAO extends BaseDAO {
      * Deletes a message.
      */
     public int delete(int messageId) throws SQLException {
-        return executeUpdate("DELETE FROM messages WHERE message_id = ?", messageId);
+        return executeUpdate(
+            """
+            DELETE FROM messages WHERE message_id = ?
+            """,
+            messageId
+        );
     }
 
     /**
@@ -180,7 +203,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int countByBaseId(int baseId) throws SQLException {
         return queryForInt(
-            "SELECT COUNT(*) FROM messages WHERE base_id = ?",
+            """
+            SELECT COUNT(*) FROM messages WHERE base_id = ?
+            """,
             baseId
         );
     }
@@ -190,7 +215,9 @@ public class MessageDAO extends BaseDAO {
      */
     public List<Message> findByBaseIdSinceDate(int baseId, Date sinceDate) throws SQLException {
         return queryForList(
-            "SELECT * FROM messages WHERE base_id = ? AND date >= ? ORDER BY date DESC",
+            """
+            SELECT * FROM messages WHERE base_id = ? AND date >= ? ORDER BY date DESC
+            """,
             MESSAGE_MAPPER,
             baseId, sinceDate
         );
@@ -201,7 +228,9 @@ public class MessageDAO extends BaseDAO {
      */
     public Message findOneByReferenceId(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM messages WHERE reference_id = ?",
+            """
+            SELECT * FROM messages WHERE reference_id = ?
+            """,
             MESSAGE_MAPPER,
             referenceId
         );
@@ -213,7 +242,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int findNextReplyReferenceId(int messageId, int parentId) throws SQLException {
         Integer result = queryForObject(
-            "SELECT reference_id FROM messages WHERE message_id > ? AND parent_id = ? LIMIT 1",
+            """
+            SELECT reference_id FROM messages WHERE message_id > ? AND parent_id = ? LIMIT 1
+            """,
             new ResultSetMapper<Integer>() {
                 public Integer map(ResultSet rs) throws SQLException {
                     return rs.getInt("reference_id");
@@ -230,7 +261,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int findPreviousReplyReferenceId(int messageId, int parentId) throws SQLException {
         Integer result = queryForObject(
-            "SELECT reference_id FROM messages WHERE message_id < ? AND parent_id = ? ORDER BY message_id DESC LIMIT 1",
+            """
+            SELECT reference_id FROM messages WHERE message_id < ? AND parent_id = ? ORDER BY message_id DESC LIMIT 1
+            """,
             new ResultSetMapper<Integer>() {
                 public Integer map(ResultSet rs) throws SQLException {
                     return rs.getInt("reference_id");
@@ -246,7 +279,9 @@ public class MessageDAO extends BaseDAO {
      */
     public List<Message> findByBaseIdOrderedByMessageId(int baseId) throws SQLException {
         return queryForList(
-            "SELECT * FROM messages WHERE base_id = ? ORDER BY message_id",
+            """
+            SELECT * FROM messages WHERE base_id = ? ORDER BY message_id
+            """,
             MESSAGE_MAPPER,
             baseId
         );
@@ -258,7 +293,9 @@ public class MessageDAO extends BaseDAO {
     public List<Message> searchByBaseId(int baseId, String searchTerm) throws SQLException {
         String pattern = "%" + searchTerm + "%";
         return queryForList(
-            "SELECT * FROM messages WHERE base_id = ? AND (title LIKE ? OR text LIKE ?) ORDER BY message_id",
+            """
+            SELECT * FROM messages WHERE base_id = ? AND (title LIKE ? OR text LIKE ?) ORDER BY message_id
+            """,
             MESSAGE_MAPPER,
             baseId, pattern, pattern
         );
@@ -270,7 +307,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int findNextReplyAfterDate(int parentId, int afterMessageId, String dateStr) throws SQLException {
         Integer result = queryForObject(
-            "SELECT reference_id FROM messages WHERE parent_id = ? AND message_id > ? AND date > ? LIMIT 1",
+            """
+            SELECT reference_id FROM messages WHERE parent_id = ? AND message_id > ? AND date > ? LIMIT 1
+            """,
             new ResultSetMapper<Integer>() {
                 public Integer map(ResultSet rs) throws SQLException {
                     return rs.getInt("reference_id");
@@ -287,7 +326,9 @@ public class MessageDAO extends BaseDAO {
      */
     public int findFirstReplyReferenceId(int parentId) throws SQLException {
         Integer result = queryForObject(
-            "SELECT reference_id FROM messages WHERE parent_id = ? LIMIT 1",
+            """
+            SELECT reference_id FROM messages WHERE parent_id = ? LIMIT 1
+            """,
             new ResultSetMapper<Integer>() {
                 public Integer map(ResultSet rs) throws SQLException {
                     return rs.getInt("reference_id");

@@ -46,7 +46,9 @@ public class ReferenceHandlerDAO extends BaseDAO {
      */
     public String findHandlerByReferenceId(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT handler FROM reference_handlers WHERE reference_id = ?",
+            """
+            SELECT handler FROM reference_handlers WHERE reference_id = ?
+            """,
             new ResultSetMapper<String>() {
                 public String map(ResultSet rs) throws SQLException {
                     return rs.getString("handler");

@@ -187,10 +187,10 @@ public class ProtocolAnalyzer {
     record.setStateName(state != null ? state.getName() : "unknown");
     record.setMnemonic(action.getName());
     record.setActionClassName(action.getClass().getSimpleName());
-    record.setUnknown(action instanceof UnknownAction);
+    boolean isUnknown = action instanceof UnknownAction;
 
     // Track mnemonic counts
-    trackMnemonic(action.getName(), action instanceof UnknownAction);
+    trackMnemonic(action.getName(), isUnknown);
 
     processRecord(record);
   }

@@ -59,7 +59,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public Bulletin findById(int bulletinId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM bulletin WHERE bulletin_id = ?",
+            """
+            SELECT * FROM bulletin WHERE bulletin_id = ?
+            """,
             BULLETIN_MAPPER,
             bulletinId
         );
@@ -70,7 +72,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public List<Bulletin> findActive() throws SQLException {
         return queryForList(
-            "SELECT * FROM bulletin WHERE start_date <= NOW() AND end_date >= NOW() ORDER BY bulletin_id",
+            """
+            SELECT * FROM bulletin WHERE start_date <= NOW() AND end_date >= NOW() ORDER BY bulletin_id
+            """,
             BULLETIN_MAPPER
         );
     }
@@ -80,7 +84,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public List<Bulletin> findApprovedActive() throws SQLException {
         return queryForList(
-            "SELECT * FROM bulletin WHERE approved = 'Y' AND start_date <= NOW() AND end_date >= NOW() ORDER BY start_date DESC",
+            """
+            SELECT * FROM bulletin WHERE approved = 'Y' AND start_date <= NOW() AND end_date >= NOW() ORDER BY start_date DESC
+            """,
             BULLETIN_MAPPER
         );
     }
@@ -90,7 +96,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public String getRandomBulletinText() throws SQLException {
         Bulletin bulletin = queryForObject(
-            "SELECT * FROM bulletin WHERE start_date <= NOW() AND end_date >= NOW() ORDER BY RAND() LIMIT 1",
+            """
+            SELECT * FROM bulletin WHERE start_date <= NOW() AND end_date >= NOW() ORDER BY RAND() LIMIT 1
+            """,
             BULLETIN_MAPPER
         );
         return bulletin != null ? bulletin.getText() : null;
@@ -102,7 +110,10 @@ public class BulletinDAO extends BaseDAO {
      */
     public int create(Bulletin bulletin) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO bulletin (text, start_date, end_date, approved) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO bulletin (text, start_date, end_date, approved)
+            VALUES (?, ?, ?, ?)
+            """,
             bulletin.getText(),
             bulletin.getStartDate(),
             bulletin.getEndDate(),
@@ -115,7 +126,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public int update(Bulletin bulletin) throws SQLException {
         return executeUpdate(
-            "UPDATE bulletin SET text = ?, start_date = ?, end_date = ?, approved = ? WHERE bulletin_id = ?",
+            """
+            UPDATE bulletin SET text = ?, start_date = ?, end_date = ?, approved = ? WHERE bulletin_id = ?
+            """,
             bulletin.getText(),
             bulletin.getStartDate(),
             bulletin.getEndDate(),
@@ -129,7 +142,9 @@ public class BulletinDAO extends BaseDAO {
      */
     public int setApproved(int bulletinId, boolean approved) throws SQLException {
         return executeUpdate(
-            "UPDATE bulletin SET approved = ? WHERE bulletin_id = ?",
+            """
+            UPDATE bulletin SET approved = ? WHERE bulletin_id = ?
+            """,
             approved, bulletinId
         );
     }
@@ -138,6 +153,11 @@ public class BulletinDAO extends BaseDAO {
      * Deletes a bulletin.
      */
     public int delete(int bulletinId) throws SQLException {
-        return executeUpdate("DELETE FROM bulletin WHERE bulletin_id = ?", bulletinId);
+        return executeUpdate(
+            """
+            DELETE FROM bulletin WHERE bulletin_id = ?
+            """,
+            bulletinId
+        );
     }
 }

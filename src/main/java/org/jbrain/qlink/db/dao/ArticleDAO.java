@@ -57,7 +57,9 @@ public class ArticleDAO extends BaseDAO {
      */
     public Article findById(int articleId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM articles WHERE article_id = ?",
+            """
+            SELECT * FROM articles WHERE article_id = ?
+            """,
             ARTICLE_MAPPER,
             articleId
         );
@@ -90,7 +92,10 @@ public class ArticleDAO extends BaseDAO {
      */
     public int create(Article article) throws SQLException {
         return executeUpdate(
-            "INSERT INTO articles (article_id, next_id, prev_id, data) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO articles (article_id, next_id, prev_id, data)
+            VALUES (?, ?, ?, ?)
+            """,
             article.getArticleId(),
             article.getNextId(),
             article.getPrevId(),
@@ -103,7 +108,9 @@ public class ArticleDAO extends BaseDAO {
      */
     public int updateData(int articleId, String data) throws SQLException {
         return executeUpdate(
-            "UPDATE articles SET data = ? WHERE article_id = ?",
+            """
+            UPDATE articles SET data = ? WHERE article_id = ?
+            """,
             data, articleId
         );
     }
@@ -113,7 +120,9 @@ public class ArticleDAO extends BaseDAO {
      */
     public int updateNextId(int articleId, int nextId) throws SQLException {
         return executeUpdate(
-            "UPDATE articles SET next_id = ? WHERE article_id = ?",
+            """
+            UPDATE articles SET next_id = ? WHERE article_id = ?
+            """,
             nextId, articleId
         );
     }
@@ -123,7 +132,9 @@ public class ArticleDAO extends BaseDAO {
      */
     public int updatePrevId(int articleId, int prevId) throws SQLException {
         return executeUpdate(
-            "UPDATE articles SET prev_id = ? WHERE article_id = ?",
+            """
+            UPDATE articles SET prev_id = ? WHERE article_id = ?
+            """,
             prevId, articleId
         );
     }
@@ -132,6 +143,11 @@ public class ArticleDAO extends BaseDAO {
      * Deletes an article.
      */
     public int delete(int articleId) throws SQLException {
-        return executeUpdate("DELETE FROM articles WHERE article_id = ?", articleId);
+        return executeUpdate(
+            """
+            DELETE FROM articles WHERE article_id = ?
+            """,
+            articleId
+        );
     }
 }

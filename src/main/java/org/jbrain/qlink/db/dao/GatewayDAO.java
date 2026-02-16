@@ -18,6 +18,7 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
+
 package org.jbrain.qlink.db.dao;
 
 import java.sql.ResultSet;
@@ -44,11 +45,11 @@ public class GatewayDAO extends BaseDAO {
 
     private final ResultSetMapper<Gateway> GATEWAY_MAPPER = new ResultSetMapper<Gateway>() {
         public Gateway map(ResultSet rs) throws SQLException {
-            Gateway gateway = new Gateway();
-            gateway.setGatewayId(rs.getInt("gateway_id"));
-            gateway.setAddress(rs.getString("address"));
-            gateway.setPort(rs.getInt("port"));
-            return gateway;
+            return new Gateway(
+                rs.getInt("gateway_id"),
+                rs.getString("address"),
+                rs.getInt("port")
+            );
         }
     };
 
@@ -57,7 +58,9 @@ public class GatewayDAO extends BaseDAO {
      */
     public Gateway findById(int gatewayId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM gateways WHERE gateway_id = ?",
+            """
+            SELECT * FROM gateways WHERE gateway_id = ?
+            """,
             GATEWAY_MAPPER,
             gatewayId
         );
@@ -68,7 +71,9 @@ public class GatewayDAO extends BaseDAO {
      */
     public List<Gateway> findAll() throws SQLException {
         return queryForList(
-            "SELECT * FROM gateways ORDER BY gateway_id",
+            """
+            SELECT * FROM gateways ORDER BY gateway_id
+            """,
             GATEWAY_MAPPER
         );
     }
@@ -78,10 +83,13 @@ public class GatewayDAO extends BaseDAO {
      */
     public int create(Gateway gateway) throws SQLException {
         return executeUpdate(
-            "INSERT INTO gateways (gateway_id, address, port) VALUES (?, ?, ?)",
-            gateway.getGatewayId(),
-            gateway.getAddress(),
-            gateway.getPort()
+            """
+            INSERT INTO gateways (gateway_id, address, port)
+            VALUES (?, ?, ?)
+            """,
+            gateway.gatewayId(),
+            gateway.address(),
+            gateway.port()
         );
     }
 
@@ -90,10 +98,12 @@ public class GatewayDAO extends BaseDAO {
      */
     public int update(Gateway gateway) throws SQLException {
         return executeUpdate(
-            "UPDATE gateways SET address = ?, port = ? WHERE gateway_id = ?",
-            gateway.getAddress(),
-            gateway.getPort(),
-            gateway.getGatewayId()
+            """
+            UPDATE gateways SET address = ?, port = ? WHERE gateway_id = ?
+            """,
+            gateway.address(),
+            gateway.port(),
+            gateway.gatewayId()
         );
     }
 
@@ -101,6 +111,11 @@ public class GatewayDAO extends BaseDAO {
      * Deletes a gateway.
      */
     public int delete(int gatewayId) throws SQLException {
-        return executeUpdate("DELETE FROM gateways WHERE gateway_id = ?", gatewayId);
+        return executeUpdate(
+            """
+            DELETE FROM gateways WHERE gateway_id = ?
+            """,
+            gatewayId
+        );
     }
 }

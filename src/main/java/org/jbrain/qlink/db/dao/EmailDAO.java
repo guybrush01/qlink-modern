@@ -63,7 +63,9 @@ public class EmailDAO extends BaseDAO {
      */
     public Email findById(int emailId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM email WHERE email_id = ?",
+            """
+            SELECT * FROM email WHERE email_id = ?
+            """,
             EMAIL_MAPPER,
             emailId
         );
@@ -74,7 +76,9 @@ public class EmailDAO extends BaseDAO {
      */
     public boolean hasUnreadEmail(int recipientId) throws SQLException {
         return exists(
-            "SELECT email_id FROM email WHERE unread = 'Y' AND recipient_id = ? LIMIT 1",
+            """
+            SELECT email_id FROM email WHERE unread = 'Y' AND recipient_id = ? LIMIT 1
+            """,
             recipientId
         );
     }
@@ -84,7 +88,9 @@ public class EmailDAO extends BaseDAO {
      */
     public Email getNextUnread(int recipientId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM email WHERE unread = 'Y' AND recipient_id = ? LIMIT 1",
+            """
+            SELECT * FROM email WHERE unread = 'Y' AND recipient_id = ? LIMIT 1
+            """,
             EMAIL_MAPPER,
             recipientId
         );
@@ -95,7 +101,9 @@ public class EmailDAO extends BaseDAO {
      */
     public List<Email> findByRecipientId(int recipientId) throws SQLException {
         return queryForList(
-            "SELECT * FROM email WHERE recipient_id = ? ORDER BY received_date DESC",
+            """
+            SELECT * FROM email WHERE recipient_id = ? ORDER BY received_date DESC
+            """,
             EMAIL_MAPPER,
             recipientId
         );
@@ -106,7 +114,9 @@ public class EmailDAO extends BaseDAO {
      */
     public List<Email> findUnreadByRecipientId(int recipientId) throws SQLException {
         return queryForList(
-            "SELECT * FROM email WHERE unread = 'Y' AND recipient_id = ? ORDER BY received_date",
+            """
+            SELECT * FROM email WHERE unread = 'Y' AND recipient_id = ? ORDER BY received_date
+            """,
             EMAIL_MAPPER,
             recipientId
         );
@@ -118,8 +128,10 @@ public class EmailDAO extends BaseDAO {
      */
     public int create(Email email) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO email (recipient_id, recipient, sender_id, sender, subject, body, unread, received_date) " +
-            "VALUES (?, ?, ?, ?, ?, ?, 'Y', NOW())",
+            """
+            INSERT INTO email (recipient_id, recipient, sender_id, sender, subject, body, unread, received_date)
+            VALUES (?, ?, ?, ?, ?, ?, 'Y', NOW())
+            """,
             email.getRecipientId(),
             email.getRecipient(),
             email.getSenderId(),
@@ -135,8 +147,10 @@ public class EmailDAO extends BaseDAO {
      */
     public int createSimple(int recipientId, int senderId, String body) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO email (recipient_id, recipient, sender_id, sender, subject, body, unread, received_date) " +
-            "VALUES (?, NULL, ?, NULL, NULL, ?, 'Y', NOW())",
+            """
+            INSERT INTO email (recipient_id, recipient, sender_id, sender, subject, body, unread, received_date)
+            VALUES (?, NULL, ?, NULL, NULL, ?, 'Y', NOW())
+            """,
             recipientId,
             senderId,
             body
@@ -148,7 +162,9 @@ public class EmailDAO extends BaseDAO {
      */
     public int markAsRead(int emailId) throws SQLException {
         return executeUpdate(
-            "UPDATE email SET unread = 'N' WHERE email_id = ?",
+            """
+            UPDATE email SET unread = 'N' WHERE email_id = ?
+            """,
             emailId
         );
     }
@@ -158,7 +174,9 @@ public class EmailDAO extends BaseDAO {
      */
     public int markAllAsRead(int recipientId) throws SQLException {
         return executeUpdate(
-            "UPDATE email SET unread = 'N' WHERE recipient_id = ?",
+            """
+            UPDATE email SET unread = 'N' WHERE recipient_id = ?
+            """,
             recipientId
         );
     }
@@ -167,14 +185,24 @@ public class EmailDAO extends BaseDAO {
      * Deletes an email.
      */
     public int delete(int emailId) throws SQLException {
-        return executeUpdate("DELETE FROM email WHERE email_id = ?", emailId);
+        return executeUpdate(
+            """
+            DELETE FROM email WHERE email_id = ?
+            """,
+            emailId
+        );
     }
 
     /**
      * Deletes all emails for a recipient.
      */
     public int deleteByRecipientId(int recipientId) throws SQLException {
-        return executeUpdate("DELETE FROM email WHERE recipient_id = ?", recipientId);
+        return executeUpdate(
+            """
+            DELETE FROM email WHERE recipient_id = ?
+            """,
+            recipientId
+        );
     }
 
     /**
@@ -182,7 +210,9 @@ public class EmailDAO extends BaseDAO {
      */
     public int countUnread(int recipientId) throws SQLException {
         return queryForInt(
-            "SELECT COUNT(*) FROM email WHERE unread = 'Y' AND recipient_id = ?",
+            """
+            SELECT COUNT(*) FROM email WHERE unread = 'Y' AND recipient_id = ?
+            """,
             recipientId
         );
     }

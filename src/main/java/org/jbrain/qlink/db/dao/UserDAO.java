@@ -66,7 +66,9 @@ public class UserDAO extends BaseDAO {
      */
     public User findById(int userId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM users WHERE user_id = ?",
+            """
+            SELECT * FROM users WHERE user_id = ?
+            """,
             USER_MAPPER,
             userId
         );
@@ -77,10 +79,12 @@ public class UserDAO extends BaseDAO {
      */
     public User findUserInfo(int userId) throws SQLException {
         return queryForObject(
-            "SELECT user_id, name, city, state, country, email, " +
-            "NULL as access_code, 'N' as active, NULL as create_date, " +
-            "NULL as last_access, NULL as last_update, NULL as orig_account, NULL as orig_code " +
-            "FROM users WHERE user_id = ?",
+            """
+            SELECT user_id, name, city, state, country, email,
+            NULL as access_code, 'N' as active, NULL as create_date,
+            NULL as last_access, NULL as last_update, NULL as orig_account, NULL as orig_code
+            FROM users WHERE user_id = ?
+            """,
             USER_MAPPER,
             userId
         );
@@ -91,7 +95,9 @@ public class UserDAO extends BaseDAO {
      */
     public User findByAccessCode(String accessCode) throws SQLException {
         return queryForObject(
-            "SELECT * FROM users WHERE access_code = ?",
+            """
+            SELECT * FROM users WHERE access_code = ?
+            """,
             USER_MAPPER,
             accessCode
         );
@@ -103,9 +109,11 @@ public class UserDAO extends BaseDAO {
      */
     public int create(User user) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO users (access_code, active, create_date, last_access, last_update, " +
-            "orig_account, orig_code, name, city, state, country, email) " +
-            "VALUES (?, ?, NOW(), NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?)",
+            """
+            INSERT INTO users (access_code, active, create_date, last_access, last_update,
+            orig_account, orig_code, name, city, state, country, email)
+            VALUES (?, ?, NOW(), NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?)
+            """,
             user.getAccessCode(),
             user.isActive(),
             user.getOrigAccount(),
@@ -123,7 +131,9 @@ public class UserDAO extends BaseDAO {
      */
     public int updateUserInfo(int userId, String name, String city, String state, String country) throws SQLException {
         return executeUpdate(
-            "UPDATE users SET name = ?, city = ?, state = ?, country = ?, last_update = NOW() WHERE user_id = ?",
+            """
+            UPDATE users SET name = ?, city = ?, state = ?, country = ?, last_update = NOW() WHERE user_id = ?
+            """,
             name, city, state, country, userId
         );
     }
@@ -133,7 +143,9 @@ public class UserDAO extends BaseDAO {
      */
     public int updateAccessCode(int userId, String accessCode) throws SQLException {
         return executeUpdate(
-            "UPDATE users SET access_code = ?, last_update = NOW() WHERE user_id = ?",
+            """
+            UPDATE users SET access_code = ?, last_update = NOW() WHERE user_id = ?
+            """,
             accessCode, userId
         );
     }
@@ -143,7 +155,9 @@ public class UserDAO extends BaseDAO {
      */
     public int updateLastAccess(int userId) throws SQLException {
         return executeUpdate(
-            "UPDATE users SET last_access = NOW() WHERE user_id = ?",
+            """
+            UPDATE users SET last_access = NOW() WHERE user_id = ?
+            """,
             userId
         );
     }
@@ -153,7 +167,9 @@ public class UserDAO extends BaseDAO {
      */
     public int setActive(int userId, boolean active) throws SQLException {
         return executeUpdate(
-            "UPDATE users SET active = ?, last_update = NOW() WHERE user_id = ?",
+            """
+            UPDATE users SET active = ?, last_update = NOW() WHERE user_id = ?
+            """,
             active, userId
         );
     }
@@ -162,7 +178,12 @@ public class UserDAO extends BaseDAO {
      * Deletes a user.
      */
     public int delete(int userId) throws SQLException {
-        return executeUpdate("DELETE FROM users WHERE user_id = ?", userId);
+        return executeUpdate(
+            """
+            DELETE FROM users WHERE user_id = ?
+            """,
+            userId
+        );
     }
 
     /**
@@ -171,8 +192,10 @@ public class UserDAO extends BaseDAO {
      */
     public int createForRegistration(String accessCode, String origAccount, String origCode) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO users (access_code, active, create_date, last_access, last_update, orig_account, orig_code) " +
-            "VALUES (?, 'Y', NOW(), NOW(), NOW(), ?, ?)",
+            """
+            INSERT INTO users (access_code, active, create_date, last_access, last_update, orig_account, orig_code)
+            VALUES (?, 'Y', NOW(), NOW(), NOW(), ?, ?)
+            """,
             accessCode,
             origAccount,
             origCode

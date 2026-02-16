@@ -10,8 +10,8 @@
     <!-- Properties for version management and plugin configuration -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
         <!-- Dependency Versions -->
         <commons-cli.version>1.5.0</commons-cli.version>

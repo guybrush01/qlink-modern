@@ -18,31 +18,18 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
+
 package org.jbrain.qlink.db.entity;
 
 /**
  * Entity representing a vendor room in the vendor_rooms table.
+ * Modernized with Java 17 records.
  */
-public class VendorRoom {
-    private int referenceId;
-    private String room;
+public record VendorRoom(int referenceId, String room) {
 
-    public VendorRoom() {
-    }
-
-    public int getReferenceId() {
-        return referenceId;
-    }
-
-    public void setReferenceId(int referenceId) {
-        this.referenceId = referenceId;
-    }
-
-    public String getRoom() {
-        return room;
-    }
-
-    public void setRoom(String room) {
-        this.room = room;
+    public VendorRoom {
+        if (room == null || room.trim().isEmpty()) {
+            throw new IllegalArgumentException("Room cannot be null or empty");
+        }
     }
 }

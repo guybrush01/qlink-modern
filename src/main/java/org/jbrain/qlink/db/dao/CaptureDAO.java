@@ -46,10 +46,11 @@ public class CaptureDAO extends BaseDAO {
     return _instance;
   }
 
-  private static final String INSERT_SQL =
-      "INSERT INTO protocol_captures (timestamp, session_id, user_handle, state_name, " +
-      "direction, mnemonic, action_class, raw_hex, payload_hex, is_unknown) " +
-      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  private static final String INSERT_SQL = """
+      INSERT INTO protocol_captures (timestamp, session_id, user_handle, state_name,
+      direction, mnemonic, action_class, raw_hex, payload_hex, is_unknown)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      """;
 
   /**
    * Save a capture record to the database.
@@ -68,8 +69,9 @@ public class CaptureDAO extends BaseDAO {
         record.isUnknown());
   }
 
-  private static final String SELECT_BY_ID_SQL =
-      "SELECT * FROM protocol_captures WHERE id = ?";
+  private static final String SELECT_BY_ID_SQL = """
+      SELECT * FROM protocol_captures WHERE id = ?
+      """;
 
   /**
    * Find a capture record by ID.
@@ -78,8 +80,9 @@ public class CaptureDAO extends BaseDAO {
     return queryForObject(SELECT_BY_ID_SQL, this::mapRecord, id);
   }
 
-  private static final String SELECT_BY_MNEMONIC_SQL =
-      "SELECT * FROM protocol_captures WHERE mnemonic = ? ORDER BY timestamp DESC LIMIT ?";
+  private static final String SELECT_BY_MNEMONIC_SQL = """
+      SELECT * FROM protocol_captures WHERE mnemonic = ? ORDER BY timestamp DESC LIMIT ?
+      """;
 
   /**
    * Find capture records by mnemonic.
@@ -88,8 +91,9 @@ public class CaptureDAO extends BaseDAO {
     return queryForList(SELECT_BY_MNEMONIC_SQL, this::mapRecord, mnemonic, limit);
   }
 
-  private static final String SELECT_UNKNOWN_SQL =
-      "SELECT * FROM protocol_captures WHERE is_unknown = true ORDER BY timestamp DESC LIMIT ?";
+  private static final String SELECT_UNKNOWN_SQL = """
+      SELECT * FROM protocol_captures WHERE is_unknown = true ORDER BY timestamp DESC LIMIT ?
+      """;
 
   /**
    * Find all unknown action records.
@@ -98,8 +102,9 @@ public class CaptureDAO extends BaseDAO {
     return queryForList(SELECT_UNKNOWN_SQL, this::mapRecord, limit);
   }
 
-  private static final String SELECT_BY_USER_SQL =
-      "SELECT * FROM protocol_captures WHERE user_handle = ? ORDER BY timestamp DESC LIMIT ?";
+  private static final String SELECT_BY_USER_SQL = """
+      SELECT * FROM protocol_captures WHERE user_handle = ? ORDER BY timestamp DESC LIMIT ?
+      """;
 
   /**
    * Find capture records by user handle.
@@ -108,8 +113,9 @@ public class CaptureDAO extends BaseDAO {
     return queryForList(SELECT_BY_USER_SQL, this::mapRecord, userHandle, limit);
   }
 
-  private static final String SELECT_BY_STATE_SQL =
-      "SELECT * FROM protocol_captures WHERE state_name = ? ORDER BY timestamp DESC LIMIT ?";
+  private static final String SELECT_BY_STATE_SQL = """
+      SELECT * FROM protocol_captures WHERE state_name = ? ORDER BY timestamp DESC LIMIT ?
+      """;
 
   /**
    * Find capture records by state name.
@@ -118,8 +124,9 @@ public class CaptureDAO extends BaseDAO {
     return queryForList(SELECT_BY_STATE_SQL, this::mapRecord, stateName, limit);
   }
 
-  private static final String COUNT_BY_MNEMONIC_SQL =
-      "SELECT mnemonic, COUNT(*) as cnt FROM protocol_captures GROUP BY mnemonic ORDER BY cnt DESC";
+  private static final String COUNT_BY_MNEMONIC_SQL = """
+      SELECT mnemonic, COUNT(*) as cnt FROM protocol_captures GROUP BY mnemonic ORDER BY cnt DESC
+      """;
 
   /**
    * Get count of records grouped by mnemonic.
@@ -135,9 +142,10 @@ public class CaptureDAO extends BaseDAO {
     return counts;
   }
 
-  private static final String COUNT_UNKNOWN_SQL =
-      "SELECT mnemonic, COUNT(*) as cnt FROM protocol_captures " +
-      "WHERE is_unknown = true GROUP BY mnemonic ORDER BY cnt DESC";
+  private static final String COUNT_UNKNOWN_SQL = """
+      SELECT mnemonic, COUNT(*) as cnt FROM protocol_captures
+      WHERE is_unknown = true GROUP BY mnemonic ORDER BY cnt DESC
+      """;
 
   /**
    * Get count of unknown action records grouped by mnemonic.
@@ -153,8 +161,9 @@ public class CaptureDAO extends BaseDAO {
     return counts;
   }
 
-  private static final String DELETE_OLD_SQL =
-      "DELETE FROM protocol_captures WHERE timestamp < DATE_SUB(NOW(), INTERVAL ? DAY)";
+  private static final String DELETE_OLD_SQL = """
+      DELETE FROM protocol_captures WHERE timestamp < DATE_SUB(NOW(), INTERVAL ? DAY)
+      """;
 
   /**
    * Delete records older than the specified number of days.
@@ -163,7 +172,9 @@ public class CaptureDAO extends BaseDAO {
     return executeUpdate(DELETE_OLD_SQL, days);
   }
 
-  private static final String DELETE_ALL_SQL = "DELETE FROM protocol_captures";
+  private static final String DELETE_ALL_SQL = """
+      DELETE FROM protocol_captures
+      """;
 
   /**
    * Delete all capture records.

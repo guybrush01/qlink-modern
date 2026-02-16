@@ -41,10 +41,10 @@ public class QHandle {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null && _sKey.isEmpty()) return true;
-    if (o instanceof QHandle && ((QHandle) o)._sKey.equals(_sKey)) {
+    if (o instanceof QHandle qh && qh._sKey.equals(_sKey)) {
       return true;
-    } else if (o instanceof String) {
-      return equals(new QHandle((String) o));
+    } else if (o instanceof String str) {
+      return equals(new QHandle(str));
     }
     return false;
   }

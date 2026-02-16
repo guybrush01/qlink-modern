@@ -87,7 +87,9 @@ public class TocDAO extends BaseDAO {
      */
     public TableOfContents findById(int tocId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM toc WHERE toc_id = ?",
+            """
+            SELECT * FROM toc WHERE toc_id = ?
+            """,
             TOC_MAPPER,
             tocId
         );
@@ -98,7 +100,9 @@ public class TocDAO extends BaseDAO {
      */
     public List<TableOfContents> findByMenuId(int menuId) throws SQLException {
         return queryForList(
-            "SELECT * FROM toc WHERE menu_id = ? AND active = 'Y' ORDER BY sort_order",
+            """
+            SELECT * FROM toc WHERE menu_id = ? AND active = 'Y' ORDER BY sort_order
+            """,
             TOC_MAPPER,
             menuId
         );
@@ -109,7 +113,9 @@ public class TocDAO extends BaseDAO {
      */
     public EntryType findEntryTypeByReferenceId(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM entry_types WHERE reference_id = ?",
+            """
+            SELECT * FROM entry_types WHERE reference_id = ?
+            """,
             ENTRY_TYPE_MAPPER,
             referenceId
         );
@@ -121,8 +127,10 @@ public class TocDAO extends BaseDAO {
      */
     public int createToc(TableOfContents toc) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO toc (menu_id, reference_id, title, sort_order, active, create_date, last_update) " +
-            "VALUES (?, ?, ?, ?, ?, NOW(), NOW())",
+            """
+            INSERT INTO toc (menu_id, reference_id, title, sort_order, active, create_date, last_update)
+            VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+            """,
             toc.getMenuId(),
             toc.getReferenceId(),
             toc.getTitle(),
@@ -136,8 +144,10 @@ public class TocDAO extends BaseDAO {
      */
     public int createEntryType(EntryType entryType) throws SQLException {
         return executeUpdate(
-            "INSERT INTO entry_types (reference_id, entry_type, cost, special, create_date, last_update) " +
-            "VALUES (?, ?, ?, ?, NOW(), NOW())",
+            """
+            INSERT INTO entry_types (reference_id, entry_type, cost, special, create_date, last_update)
+            VALUES (?, ?, ?, ?, NOW(), NOW())
+            """,
             entryType.getReferenceId(),
             entryType.getEntryType(),
             entryType.getCost(),
@@ -158,7 +168,11 @@ public class TocDAO extends BaseDAO {
 
         try {
             conn = getConnection();
-            stmt = conn.prepareStatement("SELECT reference_id FROM entry_types WHERE reference_id = ?");
+            stmt = conn.prepareStatement(
+                """
+                SELECT reference_id FROM entry_types WHERE reference_id = ?
+                """
+            );
             _log.debug("Attempting to find next available message base ID after " + start);
 
             int origId = start;
@@ -177,8 +191,10 @@ public class TocDAO extends BaseDAO {
             } else {
                 _log.debug("Creating new entry_types record with reference_id: " + start);
                 PreparedStatement insertStmt = conn.prepareStatement(
-                    "INSERT INTO entry_types (reference_id, entry_type, create_date, last_update) " +
-                    "VALUES (?, ?, NOW(), NOW())"
+                    """
+                    INSERT INTO entry_types (reference_id, entry_type, create_date, last_update)
+                    VALUES (?, ?, NOW(), NOW())
+                    """
                 );
                 insertStmt.setInt(1, start);
                 insertStmt.setInt(2, type);
@@ -203,7 +219,9 @@ public class TocDAO extends BaseDAO {
      */
     public int updateToc(int tocId, String title, int sortOrder, boolean active) throws SQLException {
         return executeUpdate(
-            "UPDATE toc SET title = ?, sort_order = ?, active = ?, last_update = NOW() WHERE toc_id = ?",
+            """
+            UPDATE toc SET title = ?, sort_order = ?, active = ?, last_update = NOW() WHERE toc_id = ?
+            """,
             title, sortOrder, active, tocId
         );
     }
@@ -212,21 +230,36 @@ public class TocDAO extends BaseDAO {
      * Deletes a TOC entry.
      */
     public int deleteToc(int tocId) throws SQLException {
-        return executeUpdate("DELETE FROM toc WHERE toc_id = ?", tocId);
+        return executeUpdate(
+            """
+            DELETE FROM toc WHERE toc_id = ?
+            """,
+            tocId
+        );
     }
 
     /**
      * Deletes an entry type.
      */
     public int deleteEntryType(int referenceId) throws SQLException {
-        return executeUpdate("DELETE FROM entry_types WHERE reference_id = ?", referenceId);
+        return executeUpdate(
+            """
+            DELETE FROM entry_types WHERE reference_id = ?
+            """,
+            referenceId
+        );
     }
 
     /**
      * Checks if a reference ID exists in entry_types.
      */
     public boolean entryTypeExists(int referenceId) throws SQLException {
-        return exists("SELECT 1 FROM entry_types WHERE reference_id = ?", referenceId);
+        return exists(
+            """
+            SELECT 1 FROM entry_types WHERE reference_id = ?
+            """,
+            referenceId
+        );
     }
 
     /**
@@ -234,9 +267,11 @@ public class TocDAO extends BaseDAO {
      */
     public List<MenuItemEntry> findMenuItems(int menuId) throws SQLException {
         return queryForList(
-            "SELECT toc.reference_id, toc.title, entry_types.entry_type, entry_types.cost " +
-            "FROM toc, entry_types WHERE toc.reference_id = entry_types.reference_id " +
-            "AND toc.menu_id = ? AND toc.active = 'Y' ORDER BY toc.sort_order",
+            """
+            SELECT toc.reference_id, toc.title, entry_types.entry_type, entry_types.cost
+            FROM toc, entry_types WHERE toc.reference_id = entry_types.reference_id
+            AND toc.menu_id = ? AND toc.active = 'Y' ORDER BY toc.sort_order
+            """,
             new ResultSetMapper<MenuItemEntry>() {
                 public MenuItemEntry map(ResultSet rs) throws SQLException {
                     MenuItemEntry item = new MenuItemEntry();

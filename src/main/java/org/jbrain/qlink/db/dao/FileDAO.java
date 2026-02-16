@@ -63,7 +63,9 @@ public class FileDAO extends BaseDAO {
      */
     public QFile findById(int fileId) throws SQLException {
         return queryForObject(
-            "SELECT file_id, reference_id, name, filetype, description FROM files WHERE file_id = ?",
+            """
+            SELECT file_id, reference_id, name, filetype, description FROM files WHERE file_id = ?
+            """,
             FILE_MAPPER,
             fileId
         );
@@ -74,7 +76,9 @@ public class FileDAO extends BaseDAO {
      */
     public QFile findByReferenceId(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT file_id, reference_id, name, filetype, description FROM files WHERE reference_id = ?",
+            """
+            SELECT file_id, reference_id, name, filetype, description FROM files WHERE reference_id = ?
+            """,
             FILE_MAPPER,
             referenceId
         );
@@ -85,7 +89,9 @@ public class FileDAO extends BaseDAO {
      */
     public List<QFile> findAllByReferenceId(int referenceId) throws SQLException {
         return queryForList(
-            "SELECT file_id, reference_id, name, filetype, description FROM files WHERE reference_id = ?",
+            """
+            SELECT file_id, reference_id, name, filetype, description FROM files WHERE reference_id = ?
+            """,
             FILE_MAPPER,
             referenceId
         );
@@ -147,7 +153,10 @@ public class FileDAO extends BaseDAO {
      */
     public int create(QFile file) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO files (reference_id, name, filetype, description, data) VALUES (?, ?, ?, ?, ?)",
+            """
+            INSERT INTO files (reference_id, name, filetype, description, data)
+            VALUES (?, ?, ?, ?, ?)
+            """,
             file.getReferenceId(),
             file.getName(),
             file.getFiletype(),
@@ -167,7 +176,10 @@ public class FileDAO extends BaseDAO {
         try {
             conn = getConnection();
             stmt = conn.prepareStatement(
-                "INSERT INTO files (reference_id, name, filetype, description, data) VALUES (?, ?, ?, ?, ?)",
+                """
+                INSERT INTO files (reference_id, name, filetype, description, data)
+                VALUES (?, ?, ?, ?, ?)
+                """,
                 PreparedStatement.RETURN_GENERATED_KEYS
             );
             stmt.setInt(1, referenceId);
@@ -193,7 +205,9 @@ public class FileDAO extends BaseDAO {
      */
     public int updateMetadata(int fileId, String name, String filetype, String description) throws SQLException {
         return executeUpdate(
-            "UPDATE files SET name = ?, filetype = ?, description = ? WHERE file_id = ?",
+            """
+            UPDATE files SET name = ?, filetype = ?, description = ? WHERE file_id = ?
+            """,
             name, filetype, description, fileId
         );
     }
@@ -202,14 +216,24 @@ public class FileDAO extends BaseDAO {
      * Deletes a file.
      */
     public int delete(int fileId) throws SQLException {
-        return executeUpdate("DELETE FROM files WHERE file_id = ?", fileId);
+        return executeUpdate(
+            """
+            DELETE FROM files WHERE file_id = ?
+            """,
+            fileId
+        );
     }
 
     /**
      * Deletes files by reference ID.
      */
     public int deleteByReferenceId(int referenceId) throws SQLException {
-        return executeUpdate("DELETE FROM files WHERE reference_id = ?", referenceId);
+        return executeUpdate(
+            """
+            DELETE FROM files WHERE reference_id = ?
+            """,
+            referenceId
+        );
     }
 
     /**
@@ -223,7 +247,10 @@ public class FileDAO extends BaseDAO {
         try {
             conn = getConnection();
             stmt = conn.prepareStatement(
-                "INSERT INTO files (reference_id, name, filetype, downloads, data) VALUES (?, ?, ?, ?, ?)",
+                """
+                INSERT INTO files (reference_id, name, filetype, downloads, data)
+                VALUES (?, ?, ?, ?, ?)
+                """,
                 PreparedStatement.RETURN_GENERATED_KEYS
             );
             stmt.setInt(1, referenceId);
@@ -249,7 +276,9 @@ public class FileDAO extends BaseDAO {
      */
     public int incrementDownloads(int referenceId) throws SQLException {
         return executeUpdate(
-            "UPDATE files SET downloads = downloads + 1 WHERE reference_id = ?",
+            """
+            UPDATE files SET downloads = downloads + 1 WHERE reference_id = ?
+            """,
             referenceId
         );
     }
@@ -259,7 +288,10 @@ public class FileDAO extends BaseDAO {
      */
     public QFile findForDownload(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT file_id, reference_id, name, filetype, description, downloads, LENGTH(data) as data_length FROM files WHERE reference_id = ?",
+            """
+            SELECT file_id, reference_id, name, filetype, description, downloads, LENGTH(data) as data_length
+            FROM files WHERE reference_id = ?
+            """,
             new ResultSetMapper<QFile>() {
                 public QFile map(ResultSet rs) throws SQLException {
                     QFile file = new QFile();

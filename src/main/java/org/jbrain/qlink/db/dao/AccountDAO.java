@@ -79,8 +79,10 @@ public class AccountDAO extends BaseDAO {
      */
     public Account findByHandle(String handle) throws SQLException {
         return queryForObject(
-            "SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active " +
-            "FROM accounts WHERE REPLACE(handle, ' ', '') LIKE ?",
+            """
+            SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active
+            FROM accounts WHERE REPLACE(handle, ' ', '') LIKE ?
+            """,
             ACCOUNT_MAPPER,
             handle.replace(" ", "")
         );
@@ -91,8 +93,10 @@ public class AccountDAO extends BaseDAO {
      */
     public List<Account> findByUserId(int userId) throws SQLException {
         return queryForList(
-            "SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active " +
-            "FROM accounts WHERE user_id = ? ORDER BY create_date",
+            """
+            SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active
+            FROM accounts WHERE user_id = ? ORDER BY create_date
+            """,
             ACCOUNT_MAPPER,
             userId
         );
@@ -103,8 +107,10 @@ public class AccountDAO extends BaseDAO {
      */
     public List<Account> findSubAccountsByUserId(int userId) throws SQLException {
         return queryForList(
-            "SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active " +
-            "FROM accounts WHERE primary_ind = 'N' AND user_id = ? ORDER BY create_date",
+            """
+            SELECT staff_ind, primary_ind, user_id, account_id, handle, refresh, active
+            FROM accounts WHERE primary_ind = 'N' AND user_id = ? ORDER BY create_date
+            """,
             ACCOUNT_MAPPER,
             userId
         );
@@ -116,9 +122,11 @@ public class AccountDAO extends BaseDAO {
      */
     public int create(Account account) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO accounts (user_id, handle, primary_ind, staff_ind, active, refresh, " +
-            "create_date, last_access, last_update) " +
-            "VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())",
+            """
+            INSERT INTO accounts (user_id, handle, primary_ind, staff_ind, active, refresh,
+            create_date, last_access, last_update)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())
+            """,
             account.getUserId(),
             account.getHandle(),
             account.isPrimaryInd(),
@@ -134,9 +142,11 @@ public class AccountDAO extends BaseDAO {
      */
     public int createPrimaryAccount(int userId, String handle) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO accounts (user_id, handle, primary_ind, staff_ind, active, refresh, " +
-            "create_date, last_access, last_update) " +
-            "VALUES (?, ?, 'Y', 'N', 'Y', 'N', NOW(), NOW(), NOW())",
+            """
+            INSERT INTO accounts (user_id, handle, primary_ind, staff_ind, active, refresh,
+            create_date, last_access, last_update)
+            VALUES (?, ?, 'Y', 'N', 'Y', 'N', NOW(), NOW(), NOW())
+            """,
             userId,
             handle
         );
@@ -147,7 +157,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int setRefresh(int accountId, boolean refresh) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET refresh = ?, last_update = NOW() WHERE account_id = ?",
+            """
+            UPDATE accounts SET refresh = ?, last_update = NOW() WHERE account_id = ?
+            """,
             refresh, accountId
         );
     }
@@ -157,7 +169,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int setPrimaryInd(int accountId, boolean primary) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET primary_ind = ?, last_update = NOW() WHERE account_id = ?",
+            """
+            UPDATE accounts SET primary_ind = ?, last_update = NOW() WHERE account_id = ?
+            """,
             primary, accountId
         );
     }
@@ -167,7 +181,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int setUserId(int accountId, int userId) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET user_id = ?, last_update = NOW() WHERE account_id = ?",
+            """
+            UPDATE accounts SET user_id = ?, last_update = NOW() WHERE account_id = ?
+            """,
             userId, accountId
         );
     }
@@ -177,7 +193,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int setActive(int accountId, boolean active) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET active = ?, last_update = NOW() WHERE account_id = ?",
+            """
+            UPDATE accounts SET active = ?, last_update = NOW() WHERE account_id = ?
+            """,
             active, accountId
         );
     }
@@ -187,7 +205,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int updateLastAccess(int accountId) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET last_access = NOW() WHERE account_id = ?",
+            """
+            UPDATE accounts SET last_access = NOW() WHERE account_id = ?
+            """,
             accountId
         );
     }
@@ -196,7 +216,12 @@ public class AccountDAO extends BaseDAO {
      * Deletes an account.
      */
     public int delete(int accountId) throws SQLException {
-        return executeUpdate("DELETE FROM accounts WHERE account_id = ?", accountId);
+        return executeUpdate(
+            """
+            DELETE FROM accounts WHERE account_id = ?
+            """,
+            accountId
+        );
     }
 
     /**
@@ -204,7 +229,9 @@ public class AccountDAO extends BaseDAO {
      */
     public boolean handleExists(String handle) throws SQLException {
         return exists(
-            "SELECT 1 FROM accounts WHERE REPLACE(handle, ' ', '') = ?",
+            """
+            SELECT 1 FROM accounts WHERE REPLACE(handle, ' ', '') = ?
+            """,
             handle.replace(" ", "")
         );
     }
@@ -214,7 +241,9 @@ public class AccountDAO extends BaseDAO {
      */
     public boolean handleReserved(String handle) throws SQLException {
         return exists(
-            "SELECT 1 FROM reserved_names WHERE name = ?",
+            """
+            SELECT 1 FROM reserved_names WHERE name = ?
+            """,
             handle.replace(" ", "").toLowerCase()
         );
     }
@@ -225,11 +254,13 @@ public class AccountDAO extends BaseDAO {
      */
     public LoginData findAccountWithUserForLogin(long accountId) throws SQLException {
         return queryForObject(
-            "SELECT a.staff_ind, a.primary_ind, a.active as account_active, a.handle, a.refresh, " +
-            "u.name, u.user_id, u.access_code, u.active as user_active " +
-            "FROM accounts a " +
-            "JOIN users u ON a.user_id = u.user_id " +
-            "WHERE a.account_id = ?",
+            """
+            SELECT a.staff_ind, a.primary_ind, a.active as account_active, a.handle, a.refresh,
+            u.name, u.user_id, u.access_code, u.active as user_active
+            FROM accounts a
+            JOIN users u ON a.user_id = u.user_id
+            WHERE a.account_id = ?
+            """,
             new ResultSetMapper<LoginData>() {
                 public LoginData map(ResultSet rs) throws SQLException {
                     LoginData data = new LoginData();
@@ -254,7 +285,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int clearRefresh(int accountId) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET refresh = 'N' WHERE account_id = ?",
+            """
+            UPDATE accounts SET refresh = 'N' WHERE account_id = ?
+            """,
             accountId
         );
     }
@@ -264,7 +297,9 @@ public class AccountDAO extends BaseDAO {
      */
     public int setRefreshForSubAccounts(int userId) throws SQLException {
         return executeUpdate(
-            "UPDATE accounts SET refresh = 'Y' WHERE primary_ind = 'N' AND user_id = ?",
+            """
+            UPDATE accounts SET refresh = 'Y' WHERE primary_ind = 'N' AND user_id = ?
+            """,
             userId
         );
     }
@@ -274,7 +309,9 @@ public class AccountDAO extends BaseDAO {
      */
     public List<String> getReservedNames() throws SQLException {
         return queryForList(
-            "SELECT name FROM reserved_names",
+            """
+            SELECT name FROM reserved_names
+            """,
             new ResultSetMapper<String>() {
                 public String map(ResultSet rs) throws SQLException {
                     return rs.getString("name");

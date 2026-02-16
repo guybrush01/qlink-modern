@@ -25,14 +25,14 @@ Created on 2024
 */
 package org.jbrain.qlink.util;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Enhanced database utility class with security improvements and proper resource management
@@ -191,16 +191,16 @@ public class DatabaseUtils {
             Object param = params[i];
             if (param == null) {
                 stmt.setNull(i + 1, java.sql.Types.VARCHAR);
-            } else if (param instanceof String) {
+            } else if (param instanceof String str) {
                 // Sanitize string parameters
-                String sanitized = SecurityUtils.sanitizeMessage((String) param);
+                String sanitized = SecurityUtils.sanitizeMessage(str);
                 stmt.setString(i + 1, sanitized != null ? sanitized : "");
-            } else if (param instanceof Integer) {
-                stmt.setInt(i + 1, (Integer) param);
-            } else if (param instanceof Long) {
-                stmt.setLong(i + 1, (Long) param);
-            } else if (param instanceof Boolean) {
-                stmt.setBoolean(i + 1, (Boolean) param);
+            } else if (param instanceof Integer num) {
+                stmt.setInt(i + 1, num);
+            } else if (param instanceof Long num) {
+                stmt.setLong(i + 1, num);
+            } else if (param instanceof Boolean bool) {
+                stmt.setBoolean(i + 1, bool);
             } else {
                 // For other types, convert to string and sanitize
                 String strValue = param.toString();

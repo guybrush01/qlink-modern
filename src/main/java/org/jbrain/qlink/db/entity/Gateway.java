@@ -18,40 +18,18 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
+
 package org.jbrain.qlink.db.entity;
 
 /**
  * Entity representing a gateway in the gateways table.
+ * Modernized with Java 17 records.
  */
-public class Gateway {
-    private int gatewayId;
-    private String address;
-    private int port;
+public record Gateway(int gatewayId, String address, int port) {
 
-    public Gateway() {
-    }
-
-    public int getGatewayId() {
-        return gatewayId;
-    }
-
-    public void setGatewayId(int gatewayId) {
-        this.gatewayId = gatewayId;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
+    public Gateway {
+        if (address == null || address.trim().isEmpty()) {
+            throw new IllegalArgumentException("Address cannot be null or empty");
+        }
     }
 }

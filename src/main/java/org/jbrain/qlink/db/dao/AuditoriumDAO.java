@@ -59,7 +59,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public AuditoriumTalk findById(int talkId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM auditorium_talk WHERE talk_id = ?",
+            """
+            SELECT * FROM auditorium_talk WHERE talk_id = ?
+            """,
             TALK_MAPPER,
             talkId
         );
@@ -70,7 +72,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public List<AuditoriumTalk> findByMnemonic(String mnemonic) throws SQLException {
         return queryForList(
-            "SELECT * FROM auditorium_talk WHERE mnemonic = ? ORDER BY sort_order",
+            """
+            SELECT * FROM auditorium_talk WHERE mnemonic = ? ORDER BY sort_order
+            """,
             TALK_MAPPER,
             mnemonic
         );
@@ -81,7 +85,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public List<AuditoriumTalk> findByMnemonicPattern(String pattern) throws SQLException {
         return queryForList(
-            "SELECT * FROM auditorium_talk WHERE mnemonic LIKE ? ORDER BY sort_order",
+            """
+            SELECT * FROM auditorium_talk WHERE mnemonic LIKE ? ORDER BY sort_order
+            """,
             TALK_MAPPER,
             pattern
         );
@@ -92,7 +98,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public List<String> getAllMnemonics() throws SQLException {
         return queryForList(
-            "SELECT DISTINCT mnemonic FROM auditorium_talk ORDER BY mnemonic",
+            """
+            SELECT DISTINCT mnemonic FROM auditorium_talk ORDER BY mnemonic
+            """,
             new ResultSetMapper<String>() {
                 public String map(ResultSet rs) throws SQLException {
                     return rs.getString("mnemonic");
@@ -107,7 +115,10 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public int create(AuditoriumTalk talk) throws SQLException {
         return executeInsertWithGeneratedKey(
-            "INSERT INTO auditorium_talk (mnemonic, text, delay, sort_order) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO auditorium_talk (mnemonic, text, delay, sort_order)
+            VALUES (?, ?, ?, ?)
+            """,
             talk.getMnemonic(),
             talk.getText(),
             talk.getDelay(),
@@ -120,7 +131,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public int update(AuditoriumTalk talk) throws SQLException {
         return executeUpdate(
-            "UPDATE auditorium_talk SET mnemonic = ?, text = ?, delay = ?, sort_order = ? WHERE talk_id = ?",
+            """
+            UPDATE auditorium_talk SET mnemonic = ?, text = ?, delay = ?, sort_order = ? WHERE talk_id = ?
+            """,
             talk.getMnemonic(),
             talk.getText(),
             talk.getDelay(),
@@ -133,14 +146,24 @@ public class AuditoriumDAO extends BaseDAO {
      * Deletes a talk entry.
      */
     public int delete(int talkId) throws SQLException {
-        return executeUpdate("DELETE FROM auditorium_talk WHERE talk_id = ?", talkId);
+        return executeUpdate(
+            """
+            DELETE FROM auditorium_talk WHERE talk_id = ?
+            """,
+            talkId
+        );
     }
 
     /**
      * Deletes all talk entries for a mnemonic.
      */
     public int deleteByMnemonic(String mnemonic) throws SQLException {
-        return executeUpdate("DELETE FROM auditorium_talk WHERE mnemonic = ?", mnemonic);
+        return executeUpdate(
+            """
+            DELETE FROM auditorium_talk WHERE mnemonic = ?
+            """,
+            mnemonic
+        );
     }
 
     /**
@@ -148,7 +171,9 @@ public class AuditoriumDAO extends BaseDAO {
      */
     public List<String> getCurrentAuditoriumText() throws SQLException {
         return queryForList(
-            "SELECT text FROM auditorium_text WHERE start_date < NOW() AND end_date > NOW()",
+            """
+            SELECT text FROM auditorium_text WHERE start_date < NOW() AND end_date > NOW()
+            """,
             new ResultSetMapper<String>() {
                 public String map(ResultSet rs) throws SQLException {
                     return rs.getString("text");

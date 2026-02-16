@@ -18,6 +18,7 @@ along with QLinkServer; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 */
+
 package org.jbrain.qlink.db.dao;
 
 import java.sql.ResultSet;
@@ -44,10 +45,10 @@ public class VendorRoomDAO extends BaseDAO {
 
     private final ResultSetMapper<VendorRoom> VENDOR_ROOM_MAPPER = new ResultSetMapper<VendorRoom>() {
         public VendorRoom map(ResultSet rs) throws SQLException {
-            VendorRoom room = new VendorRoom();
-            room.setReferenceId(rs.getInt("reference_id"));
-            room.setRoom(rs.getString("room"));
-            return room;
+            return new VendorRoom(
+                rs.getInt("reference_id"),
+                rs.getString("room")
+            );
         }
     };
 
@@ -56,7 +57,9 @@ public class VendorRoomDAO extends BaseDAO {
      */
     public VendorRoom findByReferenceId(int referenceId) throws SQLException {
         return queryForObject(
-            "SELECT * FROM vendor_rooms WHERE reference_id = ?",
+            """
+            SELECT * FROM vendor_rooms WHERE reference_id = ?
+            """,
             VENDOR_ROOM_MAPPER,
             referenceId
         );
@@ -67,7 +70,9 @@ public class VendorRoomDAO extends BaseDAO {
      */
     public List<VendorRoom> findAll() throws SQLException {
         return queryForList(
-            "SELECT * FROM vendor_rooms ORDER BY reference_id",
+            """
+            SELECT * FROM vendor_rooms ORDER BY reference_id
+            """,
             VENDOR_ROOM_MAPPER
         );
     }
@@ -77,7 +82,7 @@ public class VendorRoomDAO extends BaseDAO {
      */
     public String getRoomName(int referenceId) throws SQLException {
         VendorRoom room = findByReferenceId(referenceId);
-        return room != null ? room.getRoom() : null;
+        return room != null ? room.room() : null;
     }
 
     /**
@@ -85,9 +90,12 @@ public class VendorRoomDAO extends BaseDAO {
      */
     public int create(VendorRoom room) throws SQLException {
         return executeUpdate(
-            "INSERT INTO vendor_rooms (reference_id, room) VALUES (?, ?)",
-            room.getReferenceId(),
-            room.getRoom()
+            """
+            INSERT INTO vendor_rooms (reference_id, room)
+            VALUES (?, ?)
+            """,
+            room.referenceId(),
+            room.room()
         );
     }
 
@@ -96,7 +104,9 @@ public class VendorRoomDAO extends BaseDAO {
      */
     public int update(int referenceId, String roomName) throws SQLException {
         return executeUpdate(
-            "UPDATE vendor_rooms SET room = ? WHERE reference_id = ?",
+            """
+            UPDATE vendor_rooms SET room = ? WHERE reference_id = ?
+            """,
             roomName, referenceId
         );
     }
@@ -105,6 +115,11 @@ public class VendorRoomDAO extends BaseDAO {
      * Deletes a vendor room.
      */
     public int delete(int referenceId) throws SQLException {
-        return executeUpdate("DELETE FROM vendor_rooms WHERE reference_id = ?", referenceId);
+        return executeUpdate(
+            """
+            DELETE FROM vendor_rooms WHERE reference_id = ?
+            """,
+            referenceId
+        );
     }
 }

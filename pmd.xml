@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<ruleset name="QLink PMD Rules"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Custom PMD ruleset for QLink Reloaded project
+        Focuses on code quality, security, and maintainability
+    </description>
+
+    <!-- Import recommended rules -->
+    <rule ref="category/java/bestpractices.xml"/>
+    <rule ref="category/java/codestyle.xml"/>
+    <rule ref="category/java/design.xml"/>
+    <rule ref="category/java/documentation.xml"/>
+
+    <!-- Import security rules -->
+    <rule ref="category/java/security.xml"/>
+
+    <!-- Custom rules for QLink project -->
+
+    <!-- Error Prone Rules -->
+    <rule ref="category/java/errorprone.xml">
+        <exclude name="UnusedFormalParameter"/>
+        <exclude name="UnusedLocalVariable"/>
+    </rule>
+
+    <!-- Performance Rules -->
+    <rule ref="category/java/performance.xml"/>
+
+    <!-- Specific rules we want to enforce -->
+
+    <!-- Code Style -->
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal"/>
+    <rule ref="category/java/codestyle.xml/MethodNamingConventions"/>
+    <rule ref="category/java/codestyle.xml/PackageCase"/>
+    <rule ref="category/java/codestyle.xml/ShortMethodName"/>
+
+    <!-- Design -->
+    <rule ref="category/java/design.xml/ExcessiveParameterList"/>
+    <rule ref="category/java/design.xml/GodClass"/>
+    <rule ref="category/java/design.xml/TooManyFields"/>
+    <rule ref="category/java/design.xml/TooManyMethods"/>
+
+    <!-- Best Practices -->
+    <rule ref="category/java/bestpractices.xml/CallSuperInConstructor"/>
+    <rule ref="category/java/bestpractices.xml/DefaultPackage"/>
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+
+    <!-- Security (Custom additions) -->
+    <rule ref="category/java/security.xml">
+        <exclude name="InsecureCryptoIv"/>
+    </rule>
+
+    <!-- Documentation -->
+    <rule ref="category/java/documentation.xml/CommentRequired">
+        <properties>
+            <property name="violationSuppressRegex" value=".*"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/documentation.xml/CommentSize"/>
+    <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody"/>
+
+</ruleset>

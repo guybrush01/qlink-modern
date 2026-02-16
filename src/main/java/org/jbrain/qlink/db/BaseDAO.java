@@ -90,23 +90,16 @@ public abstract class BaseDAO {
      * Executes a query and maps results using the provided mapper.
      */
     protected <T> T queryForObject(String sql, ResultSetMapper<T> mapper, Object... params) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = getConnection();
-            stmt = conn.prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             setParameters(stmt, params);
             _log.debug("Executing query: " + sql);
-            rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapper.map(rs);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapper.map(rs);
+                }
+                return null;
             }
-            return null;
-        } finally {
-            close(rs);
-            close(stmt);
-            close(conn);
         }
     }
 
@@ -114,24 +107,16 @@ public abstract class BaseDAO {
      * Executes a query and maps all results to a list using the provided mapper.
      */
     protected <T> java.util.List<T> queryForList(String sql, ResultSetMapper<T> mapper, Object... params) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = getConnection();
-            stmt = conn.prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             setParameters(stmt, params);
             _log.debug("Executing query: " + sql);
-            rs = stmt.executeQuery();
             java.util.List<T> results = new java.util.ArrayList<T>();
             while (rs.next()) {
                 results.add(mapper.map(rs));
             }
             return results;
-        } finally {
-            close(rs);
-            close(stmt);
-            close(conn);
         }
     }
 
@@ -139,17 +124,11 @@ public abstract class BaseDAO {
      * Executes an update (INSERT, UPDATE, DELETE) and returns the number of affected rows.
      */
     protected int executeUpdate(String sql, Object... params) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = getConnection();
-            stmt = conn.prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             setParameters(stmt, params);
             _log.debug("Executing update: " + sql);
             return stmt.executeUpdate();
-        } finally {
-            close(stmt);
-            close(conn);
         }
     }
 
@@ -157,24 +136,17 @@ public abstract class BaseDAO {
      * Executes an INSERT and returns the generated key.
      */
     protected int executeInsertWithGeneratedKey(String sql, Object... params) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = getConnection();
-            stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             setParameters(stmt, params);
             _log.debug("Executing insert: " + sql);
             stmt.executeUpdate();
-            rs = stmt.getGeneratedKeys();
-            if (rs.next()) {
-                return rs.getInt(1);
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
             }
             return -1;
-        } finally {
-            close(rs);
-            close(stmt);
-            close(conn);
         }
     }
 
@@ -182,23 +154,15 @@ public abstract class BaseDAO {
      * Executes a query that returns a single integer value.
      */
     protected int queryForInt(String sql, Object... params) throws SQLException {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try {
-            conn = getConnection();
-            stmt = conn.prepareStatement(sql);
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             setParameters(stmt, params);
             _log.debug("Executing query: " + sql);
-            rs = stmt.executeQuery();
             if (rs.next()) {
                 return rs.getInt(1);
             }
             return 0;
-        } finally {
-            close(rs);
-            close(stmt);
-            close(conn);
         }
     }
 
@@ -233,22 +197,22 @@ public abstract class BaseDAO {
 
             if (param == null) {
                 stmt.setNull(paramIndex, java.sql.Types.NULL);
-            } else if (param instanceof String) {
-                stmt.setString(paramIndex, (String) param);
-            } else if (param instanceof Integer) {
-                stmt.setInt(paramIndex, (Integer) param);
-            } else if (param instanceof Long) {
-                stmt.setLong(paramIndex, (Long) param);
-            } else if (param instanceof java.util.Date) {
-                stmt.setTimestamp(paramIndex, new java.sql.Timestamp(((java.util.Date) param).getTime()));
-            } else if (param instanceof java.sql.Timestamp) {
-                stmt.setTimestamp(paramIndex, (java.sql.Timestamp) param);
-            } else if (param instanceof Boolean) {
-                stmt.setString(paramIndex, (Boolean) param ? "Y" : "N");
-            } else if (param instanceof byte[]) {
-                stmt.setBytes(paramIndex, (byte[]) param);
-            } else if (param instanceof java.io.InputStream) {
-                stmt.setBinaryStream(paramIndex, (java.io.InputStream) param);
+            } else if (param instanceof String str) {
+                stmt.setString(paramIndex, str);
+            } else if (param instanceof Integer num) {
+                stmt.setInt(paramIndex, num);
+            } else if (param instanceof Long num) {
+                stmt.setLong(paramIndex, num);
+            } else if (param instanceof java.util.Date date) {
+                stmt.setTimestamp(paramIndex, new java.sql.Timestamp(date.getTime()));
+            } else if (param instanceof java.sql.Timestamp ts) {
+                stmt.setTimestamp(paramIndex, ts);
+            } else if (param instanceof Boolean bool) {
+                stmt.setString(paramIndex, bool ? "Y" : "N");
+            } else if (param instanceof byte[] bytes) {
+                stmt.setBytes(paramIndex, bytes);
+            } else if (param instanceof java.io.InputStream stream) {
+                stmt.setBinaryStream(paramIndex, stream);
             } else {
                 stmt.setObject(paramIndex, param);
             }
