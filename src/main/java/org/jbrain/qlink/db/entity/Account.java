@@ -23,19 +23,50 @@ package org.jbrain.qlink.db.entity;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 /**
  * Entity representing an account in the accounts table.
+ * This class uses Spring Data JPA annotations for ORM mapping.
  */
+@Entity
+@Table(name = "accounts")
 public class Account {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "account_id")
     private int accountId;
+
+    @Column(name = "user_id")
     private int userId;
+
+    @Column(name = "handle", length = 50)
     private String handle;
+
+    @Column(name = "primary_ind")
     private boolean primaryInd;
+
+    @Column(name = "staff_ind")
     private boolean staffInd;
+
+    @Column(name = "active")
     private boolean active;
+
+    @Column(name = "refresh")
     private boolean refresh;
+
+    @Column(name = "create_date")
     private Date createDate;
+
+    @Column(name = "last_access")
     private Date lastAccess;
+
+    @Column(name = "last_update")
     private Date lastUpdate;
 
     public Account() {

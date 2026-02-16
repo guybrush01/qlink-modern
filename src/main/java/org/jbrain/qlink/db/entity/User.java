@@ -22,22 +22,59 @@ package org.jbrain.qlink.db.entity;
 
 import java.util.Date;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 /**
  * Entity representing a user in the users table.
+ * This class uses Spring Data JPA annotations for ORM mapping.
  */
+@Entity
+@Table(name = "users")
 public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private int userId;
+
+    @Column(name = "access_code", length = 20)
     private String accessCode;
+
+    @Column(name = "active")
     private boolean active;
+
+    @Column(name = "create_date")
     private Date createDate;
+
+    @Column(name = "last_access")
     private Date lastAccess;
+
+    @Column(name = "last_update")
     private Date lastUpdate;
+
+    @Column(name = "orig_account", length = 20)
     private String origAccount;
+
+    @Column(name = "orig_code", length = 20)
     private String origCode;
+
+    @Column(name = "name", length = 50)
     private String name;
+
+    @Column(name = "city", length = 50)
     private String city;
+
+    @Column(name = "state", length = 2)
     private String state;
+
+    @Column(name = "country", length = 50)
     private String country;
+
+    @Column(name = "email", length = 100)
     private String email;
 
     public User() {
