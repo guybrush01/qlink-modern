@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
 Copyright Jim Brain and Brain Innovations, 2005.
@@ -72,9 +73,9 @@ class Room {
 
 public class ReadLog {
 
-  private static HashMap _hex = new HashMap();
-  private static HashMap _hmRooms = new HashMap();
-  private static HashMap _hmUsers = new HashMap();
+  private static final Map<String, String> _hex = new HashMap<>();
+  private static final Map<String, Room> _hmRooms = new HashMap<>();
+  private static final Map<String, Seat> _hmUsers = new HashMap<>();
   private static boolean bPrint = true;
 
   static {

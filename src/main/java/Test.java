@@ -35,7 +35,7 @@ public class Test {
   }
 
   public static void main(String args[]) throws Exception {
-    ArrayList a = new ArrayList(5);
+    ArrayList<Test> a = new ArrayList<>(5);
     a.add(3, new Test());
     System.out.println(a.get(0));
     /*Connection conn;

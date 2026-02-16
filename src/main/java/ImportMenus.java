@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -7,7 +10,7 @@ import java.util.ArrayList;
 class Menu {
   static int id = 4000;
   private String _name;
-  private ArrayList _l = new ArrayList();
+  private ArrayList<Menu> _l = new ArrayList<>();
   private int _iIndent;
 
   public Menu(String name, int indent) {
