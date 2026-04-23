@@ -1,13 +1,79 @@
 #!/bin/bash
+set -e
 
-retcode=-1
-while (($retcode != 0)); do
-  if [ "${QLINK_SHOULD_CREATE_DB}" == "true" ]; then
-     mysql -u"${QLINK_DB_USERNAME}" -h"${QLINK_DB_HOST}" -P3306 --password="${QLINK_DB_PASSWORD}" < ./dev_privileges.sql
-  fi
-  mysql -u"${QLINK_DB_USERNAME}" -h"${QLINK_DB_HOST}" -P3306 -Dqlink --password="${QLINK_DB_PASSWORD}" < ./schema.sql
-  retcode=${?}
-  sleep 1
+# ============================================================
+# Q-Link Reloaded - Docker Entrypoint Script
+# ============================================================
+# This script handles database initialization and starts the
+# Q-Link server. It waits for MySQL to be ready before
+# attempting to connect.
+# ============================================================
+
+echo "=== Q-Link Reloaded Server ==="
+echo "Waiting for MySQL at ${QLINK_DB_HOST:-mysql}:${QLINK_DB_PORT:-3306}..."
+
+# Wait for MySQL to be ready (max 120 seconds)
+MAX_WAIT=120
+WAITED=0
+MYSQL_CMD="mysql -u${QLINK_DB_USERNAME:-qlinkuser} -h${QLINK_DB_HOST:-mysql} -P${QLINK_DB_PORT:-3306} --password=${QLINK_DB_PASSWORD:-qlinkpass}"
+
+while [ $WAITED -lt $MAX_WAIT ]; do
+    if $MYSQL_CMD -e "SELECT 1" >/dev/null 2>&1; then
+        echo "MySQL is ready!"
+        break
+    fi
+    WAITED=$((WAITED + 2))
+    echo "  Waiting... (${WAITED}s/${MAX_WAIT}s)"
+    sleep 2
 done
 
-./run
+if [ $WAITED -ge $MAX_WAIT ]; then
+    echo "ERROR: MySQL did not become ready in time (${MAX_WAIT}s)"
+    exit 1
+fi
+
+# Database initialization
+echo "Initializing database..."
+
+# Create database and user if requested
+if [ "${QLINK_SHOULD_CREATE_DB}" == "true" ]; then
+    echo "Creating database and user..."
+    # Try with root privileges first, fall back to regular user
+    MYSQL_ROOT_CMD="mysql -uroot -h${QLINK_DB_HOST:-mysql} -P${QLINK_DB_PORT:-3306}"
+    if $MYSQL_ROOT_CMD -e "SELECT 1" >/dev/null 2>&1; then
+        $MYSQL_ROOT_CMD < ./dev_privileges.sql 2>/dev/null || true
+    else
+        echo "  Note: No root access, skipping database creation (expecting pre-created DB)"
+        # Create database if it doesn't exist
+        $MYSQL_CMD -e "CREATE DATABASE IF NOT EXISTS qlink" 2>/dev/null || true
+    fi
+fi
+
+# Apply main schema
+echo "Applying schema..."
+$MYSQL_CMD -Dqlink < ./schema.sql || {
+    echo "ERROR: Failed to apply schema"
+    exit 1
+}
+
+# Apply additional updates
+echo "Applying additional updates..."
+$MYSQL_CMD -Dqlink < ./skern.sql 2>/dev/null || true
+
+echo "Database initialization complete."
+
+# Ensure logs directory exists
+mkdir -p /app/logs 2>/dev/null || true
+
+echo "Starting Q-Link server..."
+
+# Start the Q-Link server directly (JAR is at /app/qlink.jar in container)
+# Enable debug port if requested
+if [ "${QLINK_DEBUG}" == "true" ]; then
+    JVM_DEBUG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=0.0.0.0:1899"
+    echo "Debug mode enabled on port 1899"
+else
+    JVM_DEBUG=""
+fi
+
+exec java ${JVM_DEBUG} -jar /app/qlink.jar "$@"

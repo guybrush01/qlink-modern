@@ -1,0 +1,62 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: qlink-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: qlinkrootpass
+      MYSQL_DATABASE: qlink
+      MYSQL_USER: qlinkuser
+      MYSQL_PASSWORD: qlinkpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=qlinkrootpass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - qlink-network
+
+  qlink:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: qlink-server
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      QLINK_DB_HOST: mysql
+      QLINK_DB_PORT: 3306
+      QLINK_DB_USERNAME: qlinkuser
+      QLINK_DB_PASSWORD: qlinkpass
+      QLINK_DB_JDBC_URI: jdbc:mysql://mysql:3306/qlink
+      QLINK_SHOULD_CREATE_DB: "false"  # Database already created by MySQL image
+    ports:
+      - "5190:5190"   # QTCP - Main Q-Link protocol
+      - "1986:1986"   # Habilink - Habitat proxy
+      - "1899:1899"   # JDWP debug port
+    volumes:
+      - qlink-logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5190/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    networks:
+      - qlink-network
+
+volumes:
+  mysql-data:
+    driver: local
+  qlink-logs:
+    driver: local
+
+networks:
+  qlink-network:
+    driver: bridge

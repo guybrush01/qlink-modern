@@ -1,0 +1,51 @@
+# Build artifacts
+target/
+*.class
+*.jar
+!pom.xml
+
+# IDE and editor files
+.vscode/
+.claude/
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+*.geany
+
+# Documentation and images
+javadoc/
+pics/
+*.png
+*.jpg
+*.bmp
+
+# Reference data (large, not needed in container)
+reference/
+
+# Git
+.git/
+.gitignore
+
+# CI/CD (not the workflows themselves)
+.github/
+
+# Local lib directory (Maven manages dependencies)
+lib/spring/
+
+# Docker files (don't recurse)
+docker-compose.yml
+.dockerignore
+
+# Plans and docs
+plans/
+*.md
+!README*.md
+
+# Test files
+src/test/
+
+# OS files
+.DS_Store
+Thumbs.db
