@@ -13,10 +13,11 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=qlinkrootpass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pqlinkrootpass"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - qlink-network
 
@@ -43,7 +44,7 @@ services:
     volumes:
       - qlink-logs:/app/logs
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5190/ || exit 1"]
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/5190' 2>/dev/null || exit 1"]
       interval: 30s
       timeout: 5s
       start_period: 60s

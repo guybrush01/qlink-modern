@@ -1,8 +1,14 @@
 # Q-Link Reloaded - Design Review and Recommendations
 
+> **Last Updated:** 2026-04-23
+> **Review Scope:** Architecture, code quality, security, performance, testing, build/deployment
+> **Status:** Validated against current codebase (v0.1.0)
+
 ## Executive Summary
 
 Q-Link Reloaded is a Java server implementation that recreates the Q-Link (Quantum Link) online service for the Commodore 64. The project has undergone significant modernization efforts (Phase 1: Security, Phase 2: Protocol Analysis). This review covers architecture, code quality, optimization opportunities, and recommended next steps.
+
+**Overall Assessment:** The project has a solid foundational architecture with good separation of concerns. The Docker infrastructure has been modernized successfully. The biggest remaining risks are the complete lack of automated testing and several code quality issues in core dispatch logic.
 
 ---
 
@@ -197,11 +203,31 @@ The `src/test` directory is **completely empty**. This is the most significant f
 
 ## 6. Build and Deployment
 
-### Dockerfile Issues
-- **Outdated Base Image**: Uses `philcollins/aurora-centos7` which is CentOS 7 (EOL June 2024)
-- **Java Version Mismatch**: Dockerfile installs Java 8, but `pom.xml` targets Java 17
-- **No Multi-stage Build**: Could be optimized for smaller image size
-- **No Health Check**: Missing HEALTHCHECK instruction
+### Docker Infrastructure (IMPROVED)
+
+The Docker setup has been significantly modernized since the original review:
+
+**Dockerfile Strengths:**
+- Uses multi-stage build (eclipse-temurin:17-jdk-focal → eclipse-temurin:17-jre-focal)
+- Correct Java 17 runtime matching pom.xml compiler target
+- Runs as non-root user (`qlink`)
+- Includes HEALTHCHECK instruction
+- Proper layer caching (dependencies downloaded before source copy)
+- Windows line ending handling for cross-platform builds
+
+**docker-compose.yml Strengths:**
+- MySQL healthcheck with proper retry logic
+- Service dependency with `condition: service_healthy`
+- Debug port (1899/JDWP) exposed for development
+- Log volume for persistent logging
+- Environment variable configuration for database credentials
+
+**Dockerfile Optimization Opportunities:**
+1. **Outdated Base OS**: `focal` (Ubuntu 20.04) reaches EOL in April 2025. Consider migrating to `eclipse-temurin:17-jre-jammy` (Ubuntu 22.04) or `eclipse-temurin:17-jre-noble` (Ubuntu 24.04).
+2. **Duplicate Healthcheck**: Both Dockerfile and docker-compose.yml define HEALTHCHECK. The docker-compose.yml version overrides the Dockerfile version, but having both can cause confusion. Keep only the docker-compose.yml one for orchestration control.
+3. **Missing `.dockerignore` Coverage**: The current `.dockerignore` is good but could exclude `schema.sql` (426KB) since it's applied at runtime from the image itself.
+4. **Runtime Dependencies**: `curl` is installed for healthchecks but adds ~15MB. Consider using a lightweight alternative like `wget` (often pre-installed) or a TCP connection check.
+5. **Debug Port in Production**: Port 1899 (JDWP) is exposed in docker-compose.yml. This should be behind a build profile or environment flag, not default.
 
 ### Build Configuration
 - Maven shade plugin creates fat JAR - good for deployment
@@ -212,6 +238,12 @@ The `src/test` directory is **completely empty**. This is the most significant f
 - Good use of environment variables for sensitive config
 - Properties file fallback provides flexibility
 - Flyway migrations for database versioning
+
+### dockerrun Entry Script
+- **Strength:** Proper MySQL wait logic with configurable timeout
+- **Strength:** Graceful fallback when root access is unavailable
+- **Concern:** Database schema is applied on every container start (`schema.sql` runs each boot). For production, consider idempotent migrations or Flyway integration instead of raw SQL imports.
+- **Concern:** Passwords passed on command line to `mysql` client (visible in process list). Consider using `--login-path` or `MYSQL_PWD` environment variable instead.
 
 ---
 
@@ -283,13 +315,52 @@ graph LR
 
 ---
 
-## 10. Summary
+## 10. Additional Findings (Validated 2026-04-23)
 
-Q-Link Reloaded has a solid foundational architecture with good separation of concerns and a well-designed state machine for session management. The Phase 1 and Phase 2 modernization efforts addressed critical security and protocol analysis needs.
+### Confirmed Issues (Verified Against Source)
+
+| Issue | Location | Severity | Status |
+|-------|----------|----------|--------|
+| Empty test directory | `src/test/` | CRITICAL | Confirmed - 0 files |
+| Spring config never wired | `SpringDataJpaConfig.java` | HIGH | Confirmed - no ApplicationContext usage found |
+| Duplicate ActionFactory checks | `ActionFactory.java:136-152` | MEDIUM | Confirmed - `SendOLM` and `OM` checked twice each |
+| Dead test code in RoomManager | `RoomManager.java:57-72` | LOW | Confirmed - `i < 1` loops never execute |
+| Weak RNG in SecurityUtils | `SecurityUtils.java:201` | HIGH | Confirmed - uses `java.util.Random` |
+| Unbounded send queue | `QConnection.java:73` | MEDIUM | Confirmed - uses `ArrayList<Action>` |
+| No CI/CD pipeline | `.github/` | HIGH | Confirmed - only `java-upgrade` tool config |
+
+### Resolved Since Last Review
+
+| Issue | Previous Status | Current Status |
+|-------|----------------|----------------|
+| Dockerfile base image | CentOS 7 (EOL) | eclipse-temurin:17-jre-focal |
+| Java version mismatch | Java 8 vs 17 | Java 17 throughout |
+| Multi-stage build | Missing | Implemented |
+| Health check | Missing | Implemented in Dockerfile and docker-compose.yml |
+| Non-root user | Running as root | Runs as `qlink` user |
+
+### New Observations
+
+1. **ProtocolAnalyzer Buffer Management**: The capture buffer ([`ProtocolAnalyzer.java:55`](src/main/java/org/jbrain/qlink/protocol/ProtocolAnalyzer.java:55)) uses a bounded list with a max size of 10,000 records, which is good. When full, it removes the oldest 10% (`_maxBufferSize / 10`). This prevents unbounded memory growth.
+
+2. **QConnection Send Queue**: The `_alSendQueue` at [`QConnection.java:73`](src/main/java/org/jbrain/qlink/connection/QConnection.java:73) is an unbounded `ArrayList<Action>`. Under heavy load with slow clients, this could grow indefinitely. Consider replacing with `ArrayBlockingQueue<Action>(capacity)` with a reasonable bound (e.g., 1000).
+
+3. **Docker Compose Password Security**: Credentials in `docker-compose.yml` are plaintext. For production, use Docker secrets or external secret management.
+
+4. **Schema.sql Size**: At 426KB, the `schema.sql` file is very large. This suggests the database schema contains a lot of data (seed data, configuration tables). Consider separating schema DDL from data DML for faster migrations.
+
+---
+
+## 11. Summary
+
+Q-Link Reloaded has a solid foundational architecture with good separation of concerns and a well-designed state machine for session management. The Phase 1 and Phase 2 modernization efforts addressed critical security and protocol analysis needs. The Docker infrastructure has been successfully modernized.
 
 **Top 3 Immediate Actions**:
-1. **Add unit tests** - the complete lack of tests is the biggest risk
-2. **Fix the ActionFactory dispatch** - performance and maintainability win
-3. **Modernize the Dockerfile** - Java 8 vs 17 mismatch will cause build failures
+1. **Add unit tests** - the complete lack of tests (`src/test/` is empty) is the biggest risk to the project
+2. **Fix the ActionFactory dispatch** - replace the O(n) if-chain with a HashMap registry for O(1) lookups
+3. **Fix SecureRandom usage** - replace `java.util.Random` with `java.security.SecureRandom` in token generation
+
+**Resolved (No Action Needed):**
+- Dockerfile modernization - already completed with multi-stage build, Java 17, healthchecks, and non-root user
 
 The project is in a good state for continued development, but the lack of automated testing is a significant risk for future changes.
