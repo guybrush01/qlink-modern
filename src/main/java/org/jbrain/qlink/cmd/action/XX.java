@@ -23,11 +23,17 @@ SKERN
 */
 package org.jbrain.qlink.cmd.action;
 
-public class XX extends AbstractAction {
-  
+import org.jbrain.qlink.cmd.CRCException;
 
+public class XX extends AbstractAction {
+
+  public static final String MNEMONIC = "XX";
 
   public XX() {
-	  super("QM");
-    }
+    super(MNEMONIC);
+  }
+
+  public XX(byte[] data, int start, int len) throws CRCException {
+    super(data, start, len);
+  }
 }

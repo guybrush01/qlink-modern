@@ -23,9 +23,21 @@ Created on Jul 22, 2005
 */
 package org.jbrain.qlink.cmd.action;
 
+import org.jbrain.qlink.cmd.CRCException;
+
 public class EK extends Abstract2StringAction {
 
+  public static final String MNEMONIC = "EK";
+
+  public EK() {
+    super(MNEMONIC, "", "");
+  }
+
   public EK(String text, String name) {
-    super("EK", text, name);
+    super(MNEMONIC, text, name);
+  }
+
+  public EK(byte[] data, int start, int len) throws CRCException {
+    super(data, start, len);
   }
 }

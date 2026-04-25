@@ -158,6 +158,9 @@ public class MainMenu extends AbstractState {
         case "REPLAY":
           handleReplayCommand(parameter);
           break;
+        case "SEND":
+          handleSendCommand(parameter);
+          break;
         default:
           sendHelp();
           break;
@@ -226,6 +229,124 @@ public class MainMenu extends AbstractState {
     // Future feature: replay captured frames
   }
 
+  public void handleProtocolSend(QSession session, String param) throws IOException {
+    // This method is called by QLinkServer when /protocol send is received via chat
+    // Store the session and delegate to handleSendCommand
+    QSession originalSession = _session;
+    _session = session;
+    try {
+      handleSendCommand(param);
+    } finally {
+      _session = originalSession;
+    }
+  }
+
+  private void handleSendCommand(String param) throws IOException {
+    if (param == null || param.trim().isEmpty()) {
+      _session.sendSYSOLM("Usage: /protocol send <username> <mnemonic> [hex-payload]");
+      return;
+    }
+
+    String[] parts = param.trim().split("\\s+");
+    if (parts.length < 2) {
+      _session.sendSYSOLM("Usage: /protocol send <username> <mnemonic> [hex-payload]");
+      return;
+    }
+
+    String targetUser = parts[0];
+    String mnemonic = parts[1].toUpperCase();
+
+    // Validate mnemonic is 2 characters
+    if (mnemonic.length() != 2) {
+      _session.sendSYSOLM("Error: Mnemonic must be exactly 2 characters");
+      return;
+    }
+
+    // Get optional hex payload
+    byte[] payload = null;
+    if (parts.length >= 3) {
+      try {
+        payload = parseHexPayload(parts[2]);
+      } catch (Exception e) {
+        _session.sendSYSOLM("Error: Invalid hex payload - " + e.getMessage());
+        return;
+      }
+    }
+
+    // Look up the target session
+    QSession targetSession = _session.getServer().getSessionMap().get(targetUser);
+    if (targetSession == null) {
+      _session.sendSYSOLM("Error: User '" + targetUser + "' is not online");
+      return;
+    }
+
+    // Create and send the custom action
+    try {
+      Action action = createCustomAction(mnemonic, payload);
+      boolean success = targetSession.send(action);
+      if (success) {
+        _session.sendSYSOLM("Sent " + mnemonic + " to " + targetUser);
+        if (payload != null) {
+          _session.sendSYSOLM("Payload: " + bytesToHex(payload));
+        }
+      } else {
+        _session.sendSYSOLM("Error: Failed to send message");
+      }
+    } catch (Exception e) {
+      _session.sendSYSOLM("Error creating action: " + e.getMessage());
+    }
+  }
+
+  private byte[] parseHexPayload(String hex) throws IllegalArgumentException {
+    hex = hex.trim();
+    if (hex.length() % 2 != 0) {
+      throw new IllegalArgumentException("Hex string must have even length");
+    }
+    int len = hex.length() / 2;
+    byte[] data = new byte[len];
+    for (int i = 0; i < len; i++) {
+      int index = i * 2;
+      int value = Integer.parseInt(hex.substring(index, index + 2), 16);
+      data[i] = (byte) value;
+    }
+    return data;
+  }
+
+  private Action createCustomAction(String mnemonic, byte[] payload) {
+    if (payload == null || payload.length == 0) {
+      // Simple action with no payload
+      return new AbstractAction(mnemonic) {
+        @Override
+        public byte[] getBytes() {
+          byte[] data = new byte[10];
+          super.finalizeCmd(data);
+          return data;
+        }
+      };
+    } else {
+      // Action with payload - use AbstractStringAction with proper byte array
+      String strData = new String(payload, java.nio.charset.StandardCharsets.ISO_8859_1);
+      return new AbstractStringAction(mnemonic, strData) {
+        @Override
+        public byte[] getBytes() {
+          byte[] data = new byte[10 + getData().length()];
+          System.arraycopy(AbstractAction.getBytes(getAction()), 0, data, 8, 2);
+          System.arraycopy(AbstractAction.getBytes(getData()), 0, data, 10, getData().length());
+          finalizeCmd(data);
+          return data;
+        }
+      };
+    }
+  }
+
+  private String bytesToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+      sb.append(String.format("%02X", b));
+    }
+    return sb.toString();
+  }
+
   private void sendHelp() throws IOException {
     _session.sendSYSOLM("Protocol Analysis Commands:");
     _session.sendSYSOLM("  /protocol capture start     - Start capturing all traffic");
@@ -235,5 +356,6 @@ public class MainMenu extends AbstractState {
     _session.sendSYSOLM("  /protocol decode <hex>      - Decode hex frame");
     _session.sendSYSOLM("  /protocol status            - Show analyzer status");
     _session.sendSYSOLM("  /protocol replay <id>       - Replay captured message");
+    _session.sendSYSOLM("  /protocol send <user> <mnem> [hex] - Send custom action to user");
   }
 }

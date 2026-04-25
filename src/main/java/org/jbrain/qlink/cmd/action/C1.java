@@ -23,9 +23,17 @@ Created on Jul 22, 2005
 */
 package org.jbrain.qlink.cmd.action;
 
+import org.jbrain.qlink.cmd.CRCException;
+
 public class C1 extends AbstractAction {
 
+  public static final String MNEMONIC = "c1";
+
   public C1() {
-    super("c1");
+    super(MNEMONIC);
+  }
+
+  public C1(byte[] data, int start, int len) throws CRCException {
+    super(data, start, len);
   }
 }

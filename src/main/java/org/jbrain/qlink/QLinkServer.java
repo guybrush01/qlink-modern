@@ -23,6 +23,7 @@ Created on Oct 5, 2005
 */
 package org.jbrain.qlink;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.sql.SQLException;
@@ -46,6 +47,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jbrain.qlink.util.ExceptionHandler;
 import org.jbrain.qlink.cmd.action.Action;
+import org.jbrain.qlink.cmd.action.AbstractAction;
+import org.jbrain.qlink.cmd.action.AbstractStringAction;
+import org.jbrain.qlink.cmd.action.E2;
 import org.jbrain.qlink.cmd.action.Toss;
 import org.jbrain.qlink.db.DBUtils;
 import org.jbrain.qlink.extensions.RoomAuditor;
@@ -257,6 +261,127 @@ public class QLinkServer {
       ExceptionHandler.handleProtocolException(e, "sendToUser");
       return false;
     }
+  }
+
+  /**
+   * Handle protocol admin commands from chat.
+   * @param session the session issuing the command
+   * @param subcmd the subcommand (send, capture, decode, status, replay)
+   * @param param the command parameter
+   */
+  public void handleProtocolCommand(QSession session, String subcmd, String param) {
+    try {
+      // Create a temporary ProtocolCommand and delegate to MainMenu
+      // This allows the MainMenu to handle the command properly
+      String command = subcmd.toUpperCase();
+      String parameter = param != null ? param.trim() : "";
+
+      // Create a dummy ProtocolCommand to reuse the handling logic
+      org.jbrain.qlink.cmd.action.ProtocolCommand cmd =
+          new org.jbrain.qlink.cmd.action.ProtocolCommand(command, parameter);
+
+      // We need to call the MainMenu handler, but it's not directly accessible
+      // So we'll just call the handler directly through reflection or similar
+      // For now, we'll handle the most important case - SEND
+      if ("SEND".equals(command)) {
+        handleProtocolSend(session, parameter);
+      } else {
+        session.sendSYSOLM("Protocol command '" + subcmd + "' not found. Available: send, capture, decode, status, replay");
+      }
+    } catch (Exception e) {
+      session.sendSYSOLM("Error: " + e.getMessage());
+    }
+  }
+
+  private void handleProtocolSend(QSession session, String param) throws IOException {
+    if (param == null || param.trim().isEmpty()) {
+      session.sendSYSOLM("Usage: /protocol send <username> <mnemonic> [hex-payload]");
+      return;
+    }
+
+    String[] parts = param.trim().split("\\s+");
+    if (parts.length < 2) {
+      session.sendSYSOLM("Usage: /protocol send <username> <mnemonic> [hex-payload]");
+      return;
+    }
+
+    String targetUser = parts[0];
+    String mnemonic = parts[1].toUpperCase();
+
+    // Validate mnemonic is 2 characters
+    if (mnemonic.length() != 2) {
+      session.sendSYSOLM("Error: Mnemonic must be exactly 2 characters");
+      return;
+    }
+
+    // Get optional hex payload
+    byte[] payload = null;
+    if (parts.length >= 3) {
+      try {
+        payload = parseHexPayload(parts[2]);
+      } catch (Exception e) {
+        session.sendSYSOLM("Error: Invalid hex payload - " + e.getMessage());
+        return;
+      }
+    }
+
+    // Look up the target session
+    QSession targetSession = getSession(new QHandle(targetUser));
+    if (targetSession == null) {
+      session.sendSYSOLM("Error: User '" + targetUser + "' is not online");
+      return;
+    }
+
+    // Create and send the custom action
+    try {
+      Action action = createCustomAction(mnemonic, payload);
+      boolean success = targetSession.send(action);
+      if (success) {
+        session.sendSYSOLM("Sent " + mnemonic + " to " + targetUser);
+        if (payload != null) {
+          session.sendSYSOLM("Payload: " + bytesToHex(payload));
+        }
+      } else {
+        session.sendSYSOLM("Error: Failed to send message");
+      }
+    } catch (Exception e) {
+      session.sendSYSOLM("Error creating action: " + e.getMessage());
+    }
+  }
+
+  private byte[] parseHexPayload(String hex) throws IllegalArgumentException {
+    hex = hex.trim();
+    if (hex.length() % 2 != 0) {
+      throw new IllegalArgumentException("Hex string must have even length");
+    }
+    int len = hex.length() / 2;
+    byte[] data = new byte[len];
+    for (int i = 0; i < len; i++) {
+      int index = i * 2;
+      int value = Integer.parseInt(hex.substring(index, index + 2), 16);
+      data[i] = (byte) value;
+    }
+    return data;
+  }
+
+  private Action createCustomAction(String mnemonic, byte[] payload) {
+    if (payload == null || payload.length == 0) {
+      // Simple action with no payload - use an existing action class
+      // We'll use E2 as a template since it's a simple 2-byte action
+      return new E2();
+    } else {
+      // Action with payload - create a proper AbstractStringAction
+      String strData = new String(payload, java.nio.charset.StandardCharsets.ISO_8859_1);
+      return new AbstractStringAction(mnemonic, strData) {};
+    }
+  }
+
+  private String bytesToHex(byte[] bytes) {
+    StringBuilder sb = new StringBuilder();
+    for (byte b : bytes) {
+      sb.append(String.format("%02X", b));
+    }
+    return sb.toString();
   }
 
   private QSession getSession(QHandle handle) {

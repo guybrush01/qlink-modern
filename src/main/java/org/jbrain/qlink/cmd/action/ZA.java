@@ -30,21 +30,18 @@ public class ZA extends AbstractAction {
   public static final String MNEMONIC = "ZA";
   private String _sDialog;
   private String _sResponse;
-  /**
-   * @param data
-   * @param start
-   * @param len
-   * @throws CRCException
-   */
+
+  public ZA() {
+    super(MNEMONIC);
+    _sDialog = "";
+    _sResponse = "";
+  }
+
   public ZA(byte[] data, int start, int len) throws CRCException {
     super(data, start, len);
     _sDialog = AbstractAction.getString(data, start + 10, 10);
     // need to clip @@@ chars
     _sResponse = AbstractAction.getString(data, start + 21, len - 21);
-  }
-
-  public ZA() {
-    super(MNEMONIC);
   }
 
   public String getResponse() {

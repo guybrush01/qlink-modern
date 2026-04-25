@@ -23,9 +23,21 @@ Created on Jul 22, 2005
 */
 package org.jbrain.qlink.cmd.action;
 
+import org.jbrain.qlink.cmd.CRCException;
+
 public class CB extends AbstractChatAction {
 
+  public static final String MNEMONIC = "CB";
+
+  public CB() {
+    super(MNEMONIC, 0, "");
+  }
+
   public CB(int id, String handle) {
-    super("CB", id, handle);
+    super(MNEMONIC, id, handle);
+  }
+
+  public CB(byte[] data, int start, int len) throws CRCException {
+    super(data, start, len);
   }
 }

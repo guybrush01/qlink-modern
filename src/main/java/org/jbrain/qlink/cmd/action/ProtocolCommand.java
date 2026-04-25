@@ -60,4 +60,14 @@ public class ProtocolCommand extends AbstractAction {
   public String getParameter() {
     return _parameter;
   }
+
+  /**
+   * Create a ProtocolCommand with command and parameter for admin use.
+   * @param command the subcommand (e.g., "send", "capture", "decode")
+   * @param param the parameter for the command
+   * @return a new ProtocolCommand instance
+   */
+  public static ProtocolCommand create(String command, String param) {
+    return new ProtocolCommand(command, param);
+  }
 }

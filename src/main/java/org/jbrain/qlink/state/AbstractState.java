@@ -58,7 +58,11 @@ public abstract class AbstractState implements QState {
     QState state;
     boolean rc = false;
 
-    if (a instanceof LostConnection) {
+    // Handle protocol commands from any state (for staff users)
+    if (a instanceof ProtocolCommand) {
+      _session.getServer().handleProtocolCommand(_session, ((ProtocolCommand) a).getCommandName(), ((ProtocolCommand) a).getParameter());
+      rc = true;
+    } else if (a instanceof LostConnection) {
       _session.terminate();
       rc = true;
     } else if (a instanceof SuspendServiceAck) {

@@ -185,14 +185,16 @@ public abstract class AbstractChatState extends AbstractState {
   protected void process(String text) throws IOException {
     QHandle handle;
 
-    if (text.startsWith("//") || text.startsWith("=q")) {
-      // do //msg and //join here.
+    // Handle // commands (double slash) and / protocol commands (single slash)
+    if (text.startsWith("//") || text.startsWith("/")) {
       String[] olm;
       String name = null, msg = null, error = null;
-      if (text.length() > 2) {
-        QuotedStringTokenizer st = new QuotedStringTokenizer(text.substring(2));
+      int prefixLen = text.startsWith("//") ? 2 : 1;
+      if (text.length() > prefixLen) {
+        QuotedStringTokenizer st = new QuotedStringTokenizer(text.substring(prefixLen));
         String cmd = st.nextToken(" ").toLowerCase();
         int pos = 0;
+
         if (cmd.startsWith("sysmsg") && _session.isStaff()) {//
           // Send SYSOLM;
           if (st.hasMoreTokens()) msg = st.nextToken("\n");
@@ -272,9 +274,6 @@ public abstract class AbstractChatState extends AbstractState {
           } else {
             error = "Cannot change user names while in a game";
           }
-          // } else if(cmd.startsWith("join")) {
-          //	_log.debug("Entering public room");
-          //	enterRoom("TestRoom",true);
         } else if (cmd.startsWith("who")) {
           sendUserList();
         } else if (cmd.startsWith("msg")) {
@@ -296,6 +295,15 @@ public abstract class AbstractChatState extends AbstractState {
               olm[2] = "End of Message - Press F5 to cancel";
               _session.getServer().sendOLM(handle, olm);
             }
+          }
+        } else if (cmd.startsWith("protocol") && _session.isStaff()) {
+          // Handle /protocol admin commands (for both // and / prefixes)
+          if (st.hasMoreTokens()) {
+            String subcmd = st.nextToken(" ");
+            String param = st.hasMoreTokens() ? st.nextToken("\n") : "";
+            _session.getServer().handleProtocolCommand(_session, subcmd, param);
+          } else {
+            error = "Usage: " + (prefixLen == 1 ? "/" : "//") + "protocol <command> [parameters]";
           }
         } else {
           _room.say(text);

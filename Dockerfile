@@ -71,7 +71,7 @@ EXPOSE 5190 1986
 
 # Health check - verify the server is responding
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:5190/ || exit 1
+    CMD bash -c 'echo > /dev/tcp/localhost/5190' 2>/dev/null || exit 1
 
 # Environment variables with sensible defaults
 ENV QLINK_DB_HOST=mysql

@@ -29,6 +29,10 @@ public class MF extends AbstractStringAction {
 
   public static final String MNEMONIC = "MF";
 
+  public MF() {
+    super(MNEMONIC, "");
+  }
+
   public MF(byte[] data, int start, int len) throws CRCException {
     super(data, start, len);
   }

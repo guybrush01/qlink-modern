@@ -29,6 +29,10 @@ public class OE extends AbstractStringAction {
 
   public static final String MNEMONIC = "OE";
 
+  public OE() {
+    super(MNEMONIC, "");
+  }
+
   public OE(byte[] data, int start, int len) throws CRCException {
     super(data, start, len);
   }

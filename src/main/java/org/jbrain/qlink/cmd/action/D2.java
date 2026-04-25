@@ -28,12 +28,11 @@ import org.jbrain.qlink.cmd.CRCException;
 public class D2 extends AbstractAction {
 
   public static final String MNEMONIC = "D2";
-  /**
-   * @param data
-   * @param start
-   * @param len
-   * @throws CRCException
-   */
+
+  public D2() {
+    super(MNEMONIC);
+  }
+
   public D2(byte[] data, int start, int len) throws CRCException {
     super(data, start, len);
   }

@@ -131,13 +131,7 @@ public class ActionFactory {
       return new EmailCanceled(b, start, len);
     }
     if (action.equals(FileCanceled.MNEMONIC)) {
-      return new FileCanceled(b, start, len);  
-    }
-    if (action.equals(SendOLM.MNEMONIC)) {
-      return new SendOLM(b, start, len);
-    }
-    if (action.equals(OM.MNEMONIC)) {
-      return new OM(b, start, len);
+      return new FileCanceled(b, start, len);
     }
     if (action.equals(OM.MNEMONIC)) {
       return new OM(b, start, len);
@@ -147,9 +141,6 @@ public class ActionFactory {
     }
     if (action.equals(EnterBoxOffice.MNEMONIC)) {
       return new EnterBoxOffice(b, start, len);
-    }
-    if (action.equals(SendOLM.MNEMONIC)) {
-      return new SendOLM(b, start, len);
     }
     if (action.equals(ReadOLM.MNEMONIC)) {
       return new ReadOLM(b, start, len);
@@ -318,6 +309,58 @@ public class ActionFactory {
     }
     if (action.equals(ProtocolCommand.MNEMONIC)) {
       return new ProtocolCommand(b, start, len);
+    }
+    // Music Connection stubs
+    if (action.equals(MC.MNEMONIC)) {
+      return new MC(b, start, len);
+    }
+    if (action.equals(C1.MNEMONIC)) {
+      return new C1(b, start, len);
+    }
+    if (action.equals(C2.MNEMONIC)) {
+      return new C2(b, start, len);
+    }
+    if (action.equals(C3.MNEMONIC)) {
+      return new C3(b, start, len);
+    }
+    if (action.equals(CA.MNEMONIC)) {
+      return new CA(b, start, len);
+    }
+    if (action.equals(CB.MNEMONIC)) {
+      return new CB(b, start, len);
+    }
+    if (action.equals(CL.MNEMONIC)) {
+      return new CL(b, start, len);
+    }
+    if (action.equals(D2.MNEMONIC)) {
+      return new D2(b, start, len);
+    }
+    if (action.equals(E2.MNEMONIC)) {
+      return new E2(b, start, len);
+    }
+    if (action.equals(EK.MNEMONIC)) {
+      return new EK(b, start, len);
+    }
+    if (action.equals(FO.MNEMONIC)) {
+      return new FO(b, start, len);
+    }
+    if (action.equals(MF.MNEMONIC)) {
+      return new MF(b, start, len);
+    }
+    if (action.equals(OE.MNEMONIC)) {
+      return new OE(b, start, len);
+    }
+    if (action.equals(XX.MNEMONIC)) {
+      return new XX(b, start, len);
+    }
+    if (action.equals(JAM.MNEMONIC)) {
+      return new JAM(b, start, len);
+    }
+    if (action.equals(Fp.MNEMONIC)) {
+      return new Fp(b, start, len);
+    }
+    if (action.equals(ZA.MNEMONIC)) {
+      return new ZA(b, start, len);
     }
 
     // Record this unknown action for protocol analysis
